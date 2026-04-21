@@ -1,0 +1,5 @@
+{
+  "name": "TaxiVTC Platform",
+  "description": "Plataforma integral de taxi con experiencia VTC: Apps para pasajeros, conductores y panel de administración.",
+  "requestFramePermissions": ["geolocation"]
+}

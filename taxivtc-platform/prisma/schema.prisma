@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  role         String    // passenger | driver | operator | admin
+  name         String
+  phone        String    @unique
+  email        String    @unique
+  passwordHash String
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  passenger    Passenger?
+  driver       Driver?
+}
+
+model Passenger {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id])
+  defaultPaymentMethodId String?
+  ratingAvg              Float    @default(5.0)
+  
+  trips                  Trip[]
+  ratings                Rating[]
+}
+
+model Driver {
+  id                 String       @id @default(cuid())
+  userId             String       @unique
+  user               User         @relation(fields: [userId], references: [id])
+  licenseNumber      String       @unique
+  taxiLicenseId      String?
+  taxiLicense        TaxiLicense? @relation(fields: [taxiLicenseId], references: [id])
+  status             String       @default("offline") // online | offline | busy
+  verificationStatus String       @default("pending") // pending | verified | rejected
+  
+  lat                Float?
+  lng                Float?
+  heading            Float?
+  locationUpdatedAt  DateTime?
+
+  trips              Trip[]
+  ratings            Rating[]
+  offers             TripOffer[]
+}
+
+model TaxiLicense {
+  id           String    @id @default(cuid())
+  licenseCode  String    @unique
+  municipality String
+  ownerName    String
+  isActive     Boolean   @default(true)
+  
+  drivers      Driver[]
+  vehicles     Vehicle[]
+}
+
+model Vehicle {
+  id            String      @id @default(cuid())
+  taxiLicenseId String
+  taxiLicense   TaxiLicense @relation(fields: [taxiLicenseId], references: [id])
+  plate         String      @unique
+  model         String
+  color         String
+  seats         Int         @default(4)
+  accessible    Boolean     @default(false)
+  petFriendly   Boolean     @default(false)
+}
+
+model Trip {
+  id                    String    @id @default(cuid())
+  bookingReference      String    @unique // e.g. TX-123456
+  passengerId           String
+  passenger             Passenger @relation(fields: [passengerId], references: [id])
+  driverId              String?
+  driver                Driver?   @relation(fields: [driverId], references: [id])
+  status                String    @default("requested") // requested | accepted | arrived | started | completed | cancelled
+  
+  originLat             Float
+  originLng             Float
+  originText            String
+  destinationLat        Float
+  destinationLng        Float
+  destinationText       String
+  
+  requestedAt           DateTime  @default(now())
+  quoteAcceptedAt       DateTime?
+  driverEnRouteAt       DateTime?
+  arrivedAtPickupAt     DateTime?
+  passengerOnBoardAt    DateTime?
+  startedAt             DateTime?
+  completedAt           DateTime?
+  noShowAt              DateTime?
+  cancelledAt           DateTime?
+  
+  estimatedPrice        Float
+  agreedPrice           Float?
+  finalPrice            Float?
+  
+  pricingRuleId         String?
+  pricingRule           PricingRule? @relation(fields: [pricingRuleId], references: [id])
+  quoteBreakdown        Json?     // { baseFare, distanceFare, timeEstimate, rateType, minFareApplied }
+  
+  paymentStatus         String    @default("pending") // pending | processing | paid | failed
+  paymentMethod         String    @default("in_app") // in_app | cash
+  paymentIntentId       String?
+  paidAt                DateTime?
+  receiptReference      String?
+  
+  disputedAt            DateTime?
+  internalNotes         String?
+
+  routeDistanceMeters   Int?
+  routeDurationSeconds  Int?
+  
+  dispatchStatus        String    @default("pending_dispatch") // pending_dispatch | offered | accepted | expired | reassigned | no_driver_found
+  
+  events                TripEvent[]
+  payments              Payment[]
+  ratings               Rating[]
+  offers                TripOffer[]
+}
+
+model TripOffer {
+  id          String   @id @default(cuid())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id])
+  driverId    String
+  driver      Driver   @relation(fields: [driverId], references: [id])
+  status      String   @default("pending") // pending | accepted | rejected | expired
+  offeredAt   DateTime @default(now())
+  expiresAt   DateTime
+  respondedAt DateTime?
+}
+
+model TripEvent {
+  id          String   @id @default(cuid())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id])
+  type        String
+  payloadJson String?  // Store as JSON string
+  createdAt   DateTime @default(now())
+}
+
+model PricingRule {
+  id                 String    @id @default(cuid())
+  city               String
+  baseFare           Float
+  minimumFare        Float
+  perKmDay           Float
+  perKmNight         Float
+  waitingPerHour     Float
+  airportSupplement  Float     @default(0)
+  stationSupplement  Float     @default(0)
+  noShowFee          Float     @default(5.0)
+  cancellationFee    Float     @default(5.0)
+  activeFrom         DateTime?
+  activeTo           DateTime?
+  
+  trips              Trip[]
+}
+
+model Payment {
+  id                String    @id @default(cuid())
+  tripId            String
+  trip              Trip      @relation(fields: [tripId], references: [id])
+  provider          String    @default("stripe")
+  providerPaymentId String?
+  amount            Float
+  currency          String    @default("EUR")
+  status            String
+  paidAt            DateTime? @default(now())
+}
+
+model Rating {
+  id          String    @id @default(cuid())
+  tripId      String
+  trip        Trip      @relation(fields: [tripId], references: [id])
+  passengerId String
+  passenger   Passenger @relation(fields: [passengerId], references: [id])
+  driverId    String
+  driver      Driver    @relation(fields: [driverId], references: [id])
+  score       Int
+  comment     String?
+  createdAt   DateTime  @default(now())
+}
