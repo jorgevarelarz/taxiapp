@@ -3,6 +3,7 @@ import { useAuthStore } from '../../store/authStore';
 import { MapPin, Navigation, Search, Clock, CreditCard, Star, LogOut, Car, User, ChevronRight, History, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleMap, useJsApiLoader, Autocomplete, DirectionsRenderer, Marker } from '@react-google-maps/api';
+import { fetchJson } from '../../lib/api';
 
 const containerStyle = {
   width: '100%',
@@ -26,6 +27,11 @@ export default function PassengerHome() {
   const [paymentMethod, setPaymentMethod] = useState<'in_app' | 'cash'>('in_app');
   const [directions, setDirections] = useState<any>(null);
   const [driverLocation, setDriverLocation] = useState<{ lat: number, lng: number, heading: number } | null>(null);
+  const [uiError, setUiError] = useState<string | null>(null);
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
+  const [isRequestingTrip, setIsRequestingTrip] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
 
   const originAutocompleteRef = useRef<any>(null);
   const destinationAutocompleteRef = useRef<any>(null);
@@ -38,100 +44,117 @@ export default function PassengerHome() {
 
   const handleQuote = async () => {
     if (!destination.text) return;
+    setUiError(null);
     setStep('quoting');
+    setIsSubmittingQuote(true);
     setDirections(null); // Reset directions on new quote
+    try {
+      const data = await fetchJson<any>('/api/passenger/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ originText: origin.text, destinationText: destination.text }),
+      });
+      setQuote(data);
 
-    const res = await fetch('/api/passenger/quote', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ originText: origin.text, destinationText: destination.text }),
-    });
-
-    if (!res.ok) {
-      // Handle error from backend
-      const errorData = await res.json();
-      console.error("Error calculating quote:", errorData);
-      setStep('idle'); // Go back to idle step
-      // You might want to show a toast or an error message to the user here
-      return;
-    }
-    
-    const data = await res.json();
-    setQuote(data);
-
-    // Get directions for the map using the server-validated coordinates
-    const directionsService = new window.google.maps.DirectionsService();
-    directionsService.route(
-      {
-        origin: data.origin.coords,
-        destination: data.destination.coords,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === window.google.maps.DirectionsStatus.OK) {
-          setDirections(result);
-        } else {
-          console.error(`error fetching directions ${result}`);
+      // Get directions for the map using the server-validated coordinates
+      const directionsService = new window.google.maps.DirectionsService();
+      directionsService.route(
+        {
+          origin: data.origin.coords,
+          destination: data.destination.coords,
+          travelMode: window.google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === window.google.maps.DirectionsStatus.OK) {
+            setDirections(result);
+          } else {
+            setUiError('No se pudo calcular la ruta visual del viaje');
+          }
         }
-      }
-    );
+      );
+    } catch (error) {
+      setUiError(error instanceof Error ? error.message : 'No se pudo calcular el presupuesto');
+      setStep('idle');
+    } finally {
+      setIsSubmittingQuote(false);
+    }
   };
 
   const handleRequest = async () => {
+    setUiError(null);
     setStep('searching');
+    setIsRequestingTrip(true);
     // The `quote` object now contains the server-validated data
     const { origin, destination, estimatedPrice, distanceMeters, durationSeconds, pricingRuleId, breakdown } = quote;
-
-    const res = await fetch('/api/passenger/trips', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        origin, // Now { text, coords } from server
-        destination, // Now { text, coords } from server
-        agreedPrice: estimatedPrice,
-        distanceMeters,
-        durationSeconds,
-        pricingRuleId,
-        breakdown,
-        paymentMethod
-      }),
-    });
-    const data = await res.json();
-    setActiveTrip(data);
+    try {
+      const data = await fetchJson<any>('/api/passenger/trips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          origin,
+          destination,
+          agreedPrice: estimatedPrice,
+          distanceMeters,
+          durationSeconds,
+          pricingRuleId,
+          breakdown,
+          paymentMethod
+        }),
+      });
+      setActiveTrip(data);
+    } catch (error) {
+      setUiError(error instanceof Error ? error.message : 'No se pudo solicitar el viaje');
+      setStep('quoting');
+    } finally {
+      setIsRequestingTrip(false);
+    }
   };
 
   const handlePaymentConfirm = async () => {
-    const res = await fetch(`/api/passenger/trips/${activeTrip.id}/payment/confirm`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await res.json();
-    setActiveTrip(data);
-    if (data.paymentStatus === 'paid') {
-      setStep('idle');
-      setDestination({ text: '', coords: null });
-      setQuote(null);
-      setActiveTrip(null);
+    setUiError(null);
+    setIsPaying(true);
+    try {
+      const data = await fetchJson<any>(`/api/passenger/trips/${activeTrip.id}/payment/confirm`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setActiveTrip(data);
+      if (data.paymentStatus === 'paid') {
+        setStep('idle');
+        setDestination({ text: '', coords: null });
+        setQuote(null);
+        setActiveTrip(null);
+      }
+    } catch (error) {
+      setUiError(error instanceof Error ? error.message : 'No se pudo completar el pago');
+    } finally {
+      setIsPaying(false);
     }
   };
 
   useEffect(() => {
     const fetchActiveTrip = async () => {
-      const res = await fetch('/api/passenger/trips/active', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data) {
-        setActiveTrip(data);
-        if (data.status === 'completed' || data.status === 'cancelled' || data.status === 'no_show') {
-          if (data.paymentStatus !== 'paid') {
-            setStep('payment');
+      setIsBootstrapping(true);
+      try {
+        const data = await fetchJson<any | null>('/api/passenger/trips/active', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (data) {
+          setActiveTrip(data);
+          if (data.status === 'completed' || data.status === 'cancelled' || data.status === 'no_show') {
+            if (data.paymentStatus !== 'paid') {
+              setStep('payment');
+            }
+          } else if (['driver_en_route', 'arrived_at_pickup', 'passenger_on_board', 'in_progress'].includes(data.status)) {
+            setStep('on-trip');
+          } else if (data.status === 'requested') {
+            setStep('searching');
           }
-        } else if (['driver_en_route', 'arrived_at_pickup', 'passenger_on_board', 'in_progress'].includes(data.status)) {
-          setStep('on-trip');
-        } else if (data.status === 'requested') {
-          setStep('searching');
         }
+      } catch (error) {
+        setUiError(error instanceof Error ? error.message : 'No se pudo restaurar el viaje activo');
+      } finally {
+        setIsBootstrapping(false);
       }
     };
     fetchActiveTrip();
@@ -140,36 +163,39 @@ export default function PassengerHome() {
   useEffect(() => {
     if (!activeTrip || activeTrip.paymentStatus === 'paid') return;
 
-    const eventSource = new EventSource(`/api/events/trips?token=${token}&role=passenger&tripId=${activeTrip.id}`);
+    const eventSource = new EventSource(`/api/events/trips?tripId=${activeTrip.id}`);
 
     eventSource.addEventListener('trip_update', async (e) => {
       // Fetch full trip details to get nested relations (driver, user)
-      const res = await fetch(`/api/passenger/trips/${activeTrip.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setActiveTrip(data);
+      try {
+        const data = await fetchJson<any>(`/api/passenger/trips/${activeTrip.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setActiveTrip(data);
       
-      if (data.status === 'completed') {
-        if (data.paymentStatus === 'paid') {
-          setStep('idle');
-          setDestination({ text: '', coords: null });
-          setQuote(null);
-          setActiveTrip(null);
-        } else {
-          setStep('payment');
+        if (data.status === 'completed') {
+          if (data.paymentStatus === 'paid') {
+            setStep('idle');
+            setDestination({ text: '', coords: null });
+            setQuote(null);
+            setActiveTrip(null);
+          } else {
+            setStep('payment');
+          }
+        } else if (data.status === 'cancelled' || data.status === 'no_show') {
+          if (data.paymentStatus === 'paid') {
+            setStep('idle');
+            setDestination({ text: '', coords: null });
+            setQuote(null);
+            setActiveTrip(null);
+          } else {
+            setStep('payment');
+          }
+        } else if (['driver_en_route', 'arrived_at_pickup', 'passenger_on_board', 'in_progress'].includes(data.status)) {
+          setStep('on-trip');
         }
-      } else if (data.status === 'cancelled' || data.status === 'no_show') {
-        if (data.paymentStatus === 'paid') {
-          setStep('idle');
-          setDestination({ text: '', coords: null });
-          setQuote(null);
-          setActiveTrip(null);
-        } else {
-          setStep('payment');
-        }
-      } else if (['driver_en_route', 'arrived_at_pickup', 'passenger_on_board', 'in_progress'].includes(data.status)) {
-        setStep('on-trip');
+      } catch {
+        setUiError('No se pudo refrescar el estado del viaje');
       }
     });
 
@@ -181,7 +207,7 @@ export default function PassengerHome() {
   useEffect(() => {
     if (step !== 'on-trip' || !activeTrip?.driver?.id) return;
 
-    const eventSource = new EventSource(`/api/events/drivers?token=${token}&role=passenger`);
+    const eventSource = new EventSource('/api/events/drivers');
 
     eventSource.addEventListener('driver_location_update', (e) => {
       const location = JSON.parse(e.data);
@@ -218,9 +244,19 @@ export default function PassengerHome() {
       </header>
 
       <main className="flex-1 p-4 max-w-lg mx-auto w-full space-y-6 pb-24">
+        {uiError && (
+          <div className="bg-red-50 text-red-700 p-4 rounded-2xl border border-red-100 text-sm font-medium">
+            {uiError}
+          </div>
+        )}
+
         {/* Map View */}
         <div className="h-64 bg-zinc-200 rounded-[2.5rem] overflow-hidden relative shadow-inner border-4 border-white">
-          {isLoaded && (
+          {!isLoaded ? (
+            <div className="h-full w-full flex items-center justify-center text-zinc-500 text-sm font-medium bg-zinc-100">
+              Cargando mapa...
+            </div>
+          ) : (
             <GoogleMap
               mapContainerStyle={containerStyle}
               center={driverLocation || center}
@@ -329,10 +365,10 @@ export default function PassengerHome() {
 
               <button
                 onClick={handleQuote}
-                disabled={!destination.coords}
+                disabled={!destination.coords || isSubmittingQuote}
                 className="w-full bg-zinc-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-zinc-800 disabled:opacity-30 transition-all shadow-xl active:scale-[0.98] flex items-center justify-center gap-3"
               >
-                Solicitar Presupuesto <ChevronRight className="w-5 h-5" />
+                {isSubmittingQuote ? 'Calculando...' : 'Solicitar Presupuesto'} <ChevronRight className="w-5 h-5" />
               </button>
             </motion.div>
           )}
@@ -398,9 +434,10 @@ export default function PassengerHome() {
                 </button>
                 <button
                   onClick={handleRequest}
-                  className="flex-[2] bg-zinc-900 text-white py-5 rounded-2xl font-black text-xl hover:bg-zinc-800 transition-all shadow-xl"
+                  disabled={isRequestingTrip}
+                  className="flex-[2] bg-zinc-900 text-white py-5 rounded-2xl font-black text-xl hover:bg-zinc-800 transition-all shadow-xl disabled:opacity-50"
                 >
-                  Pedir Ahora
+                  {isRequestingTrip ? 'Solicitando...' : 'Pedir Ahora'}
                 </button>
               </div>
             </motion.div>
@@ -433,10 +470,15 @@ export default function PassengerHome() {
               <button
                 onClick={async () => {
                   if (activeTrip?.id) {
-                    await fetch(`/api/passenger/trips/${activeTrip.id}/cancel`, {
-                      method: 'POST',
-                      headers: { Authorization: `Bearer ${token}` }
-                    });
+                    try {
+                      await fetchJson(`/api/passenger/trips/${activeTrip.id}/cancel`, {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${token}` }
+                      });
+                    } catch (error) {
+                      setUiError(error instanceof Error ? error.message : 'No se pudo cancelar el viaje');
+                      return;
+                    }
                   }
                   setStep('idle');
                   setActiveTrip(null);
@@ -540,14 +582,21 @@ export default function PassengerHome() {
               ) : (
                 <button
                   onClick={handlePaymentConfirm}
-                  className="w-full bg-zinc-900 text-white py-5 rounded-2xl font-black text-xl hover:bg-zinc-800 shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3"
+                  disabled={isPaying}
+                  className="w-full bg-zinc-900 text-white py-5 rounded-2xl font-black text-xl hover:bg-zinc-800 shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                 >
-                  <CreditCard className="w-6 h-6" /> Pagar Ahora
+                  <CreditCard className="w-6 h-6" /> {isPaying ? 'Procesando...' : 'Pagar Ahora'}
                 </button>
               )}
             </motion.div>
           )}
         </AnimatePresence>
+
+        {isBootstrapping && (
+          <div className="text-center text-zinc-400 text-sm font-medium py-6">
+            Restaurando viaje activo...
+          </div>
+        )}
       </main>
 
       {/* Bottom Nav Placeholder */}

@@ -2,6 +2,15 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { driverLocationEventEmitter, tripEventEmitter } from "../sse";
 import { customAlphabet } from "nanoid";
+import { publicUserSelect } from "../lib/publicUser";
+import {
+  driverLocationSchema,
+  driverOfferSchema,
+  driverStatusSchema,
+  driverTripStatusSchema,
+  formatValidationError,
+} from "../lib/validation";
+import { ZodError } from "zod";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -26,19 +35,17 @@ router.post("/location", isDriver, async (req: any, res) => {
     return res.status(429).json({ error: "Too many requests. Please wait a moment." });
   }
 
-  const { lat, lng, heading } = req.body;
+  let locationInput;
+  try {
+    locationInput = driverLocationSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid driver location payload" });
+  }
 
-  if (lat === undefined || lng === undefined) {
-    return res.status(400).json({ error: "lat and lng are required" });
-  }
-  
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    return res.status(400).json({ error: "Invalid coordinates" });
-  }
-
-  if (heading !== undefined && (heading < 0 || heading > 360)) {
-    return res.status(400).json({ error: "Invalid heading. Must be between 0 and 360." });
-  }
+  const { lat, lng, heading } = locationInput;
 
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
@@ -46,9 +53,15 @@ router.post("/location", isDriver, async (req: any, res) => {
   });
 
   if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Account is inactive" });
+  }
   
   if (user.driver.status === 'offline') {
     return res.status(403).json({ error: "Driver is offline and cannot update location." });
+  }
+  if (user.driver.verificationStatus !== "verified") {
+    return res.status(403).json({ error: "Driver is not verified" });
   }
 
   const updatedDriver = await prisma.driver.update({
@@ -75,13 +88,30 @@ router.post("/location", isDriver, async (req: any, res) => {
 });
 
 router.post("/status", isDriver, async (req: any, res) => {
-  const { status } = req.body;
+  let statusInput;
+  try {
+    statusInput = driverStatusSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid driver status payload" });
+  }
+
+  const { status } = statusInput;
+
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
     include: { driver: true },
   });
 
   if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Account is inactive" });
+  }
+  if ((status === "online" || status === "busy") && user.driver.verificationStatus !== "verified") {
+    return res.status(403).json({ error: "Driver must be verified before going available" });
+  }
 
   const updatedDriver = await prisma.driver.update({
     where: { id: user.driver.id },
@@ -97,6 +127,9 @@ router.get("/trips/active", isDriver, async (req: any, res) => {
   });
 
   if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Account is inactive" });
+  }
 
   const activeTrip = await prisma.trip.findFirst({
     where: {
@@ -106,8 +139,8 @@ router.get("/trips/active", isDriver, async (req: any, res) => {
       }
     },
     include: { 
-      passenger: { include: { user: true } }, 
-      driver: { include: { user: true } },
+      passenger: { include: { user: { select: publicUserSelect } } }, 
+      driver: { include: { user: { select: publicUserSelect } } },
       events: true
     },
     orderBy: { requestedAt: 'desc' }
@@ -126,8 +159,8 @@ router.get("/trips/active", isDriver, async (req: any, res) => {
         }
       },
       include: { 
-        passenger: { include: { user: true } }, 
-        driver: { include: { user: true } },
+        passenger: { include: { user: { select: publicUserSelect } } }, 
+        driver: { include: { user: { select: publicUserSelect } } },
         events: true
       },
       orderBy: { requestedAt: 'desc' }
@@ -138,6 +171,33 @@ router.get("/trips/active", isDriver, async (req: any, res) => {
   res.json(activeTrip);
 });
 
+router.get("/trips/:id", isDriver, async (req: any, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { driver: true },
+  });
+
+  if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Account is inactive" });
+  }
+
+  const trip = await prisma.trip.findFirst({
+    where: {
+      id: req.params.id,
+      driverId: user.driver.id,
+    },
+    include: {
+      passenger: { include: { user: { select: publicUserSelect } } },
+      driver: { include: { user: { select: publicUserSelect } } },
+      events: true,
+    },
+  });
+
+  if (!trip) return res.status(404).json({ error: "Trip not found" });
+  res.json(trip);
+});
+
 router.get("/requests", isDriver, async (req: any, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
@@ -145,6 +205,12 @@ router.get("/requests", isDriver, async (req: any, res) => {
   });
 
   if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Account is inactive" });
+  }
+  if (user.driver.verificationStatus !== "verified") {
+    return res.status(403).json({ error: "Driver is not verified" });
+  }
 
   // Find active offers for this driver
   const activeOffers = await prisma.tripOffer.findMany({
@@ -155,7 +221,7 @@ router.get("/requests", isDriver, async (req: any, res) => {
     },
     include: { 
       trip: {
-        include: { passenger: { include: { user: true } } }
+        include: { passenger: { include: { user: { select: publicUserSelect } } } }
       }
     }
   });
@@ -177,11 +243,36 @@ router.post("/trips/:id/accept", isDriver, async (req: any, res) => {
   });
 
   if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Account is inactive" });
+  }
+  if (user.driver.verificationStatus !== "verified") {
+    return res.status(403).json({ error: "Driver is not verified" });
+  }
+  if (user.driver.status !== "online") {
+    return res.status(403).json({ error: "Driver must be online to accept trips" });
+  }
 
-  const { offerId } = req.body;
+  let offerInput;
+  try {
+    offerInput = driverOfferSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid offer payload" });
+  }
+
+  const { offerId } = offerInput;
 
   // Verify offer is still valid
-  const offer = await prisma.tripOffer.findUnique({ where: { id: offerId } });
+  const offer = await prisma.tripOffer.findFirst({
+    where: {
+      id: offerId,
+      tripId: req.params.id,
+      driverId: user.driver.id,
+    },
+  });
   if (!offer || offer.status !== "pending" || offer.expiresAt < new Date()) {
     return res.status(400).json({ error: "Offer expired or invalid" });
   }
@@ -201,7 +292,7 @@ router.post("/trips/:id/accept", isDriver, async (req: any, res) => {
       dispatchStatus: "accepted",
       driverEnRouteAt: new Date(),
     },
-    include: { passenger: { include: { user: true } } }
+    include: { passenger: { include: { user: { select: publicUserSelect } } } }
   });
 
   await prisma.tripEvent.create({
@@ -214,7 +305,40 @@ router.post("/trips/:id/accept", isDriver, async (req: any, res) => {
 });
 
 router.post("/trips/:id/reject", isDriver, async (req: any, res) => {
-  const { offerId } = req.body;
+  let offerInput;
+  try {
+    offerInput = driverOfferSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid offer payload" });
+  }
+
+  const { offerId } = offerInput;
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { driver: true },
+  });
+
+  if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Account is inactive" });
+  }
+  if (user.driver.verificationStatus !== "verified") {
+    return res.status(403).json({ error: "Driver is not verified" });
+  }
+
+  const offer = await prisma.tripOffer.findFirst({
+    where: {
+      id: offerId,
+      tripId: req.params.id,
+      driverId: user.driver.id,
+    },
+  });
+  if (!offer || offer.status !== "pending") {
+    return res.status(400).json({ error: "Offer expired or invalid" });
+  }
   
   await prisma.tripOffer.update({
     where: { id: offerId },
@@ -235,18 +359,36 @@ router.post("/trips/:id/reject", isDriver, async (req: any, res) => {
 });
 
 router.post("/trips/:id/status", isDriver, async (req: any, res) => {
-  const { status } = req.body;
-  const validStatuses = ['driver_en_route', 'arrived_at_pickup', 'passenger_on_board', 'in_progress', 'completed', 'no_show'];
-  
-  if (!validStatuses.includes(status)) {
-    return res.status(400).json({ error: "Invalid status" });
+  let statusInput;
+  try {
+    statusInput = driverTripStatusSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid trip status payload" });
   }
+
+  const { status } = statusInput;
 
   const trip = await prisma.trip.findUnique({ 
     where: { id: req.params.id },
     include: { pricingRule: true }
   });
   if (!trip) return res.status(404).json({ error: "Trip not found" });
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { driver: true },
+  });
+
+  if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Account is inactive" });
+  }
+  if (trip.driverId !== user.driver.id) {
+    return res.status(403).json({ error: "Not authorized" });
+  }
 
   if (trip.status === 'cancelled') {
     return res.status(400).json({ error: "Cannot update a cancelled trip" });
@@ -289,7 +431,7 @@ router.post("/trips/:id/status", isDriver, async (req: any, res) => {
   const updatedTrip = await prisma.trip.update({
     where: { id: req.params.id },
     data: updateData,
-    include: { passenger: { include: { user: true } } }
+    include: { passenger: { include: { user: { select: publicUserSelect } } } }
   });
 
   await prisma.tripEvent.create({
@@ -304,6 +446,19 @@ router.post("/trips/:id/status", isDriver, async (req: any, res) => {
 router.post("/trips/:id/payment/collect", isDriver, async (req: any, res) => {
   const trip = await prisma.trip.findUnique({ where: { id: req.params.id } });
   if (!trip) return res.status(404).json({ error: "Trip not found" });
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { driver: true },
+  });
+
+  if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Account is inactive" });
+  }
+  if (trip.driverId !== user.driver.id) {
+    return res.status(403).json({ error: "Not authorized" });
+  }
 
   if (!['completed', 'no_show', 'cancelled'].includes(trip.status)) {
     return res.status(400).json({ error: "Trip must be completed, no_show, or cancelled to collect payment" });
@@ -325,7 +480,7 @@ router.post("/trips/:id/payment/collect", isDriver, async (req: any, res) => {
       paidAt: new Date(),
       receiptReference: `RCPT-${generateReceiptReference()}`
     },
-    include: { passenger: { include: { user: true } } }
+    include: { passenger: { include: { user: { select: publicUserSelect } } } }
   });
 
   await prisma.tripEvent.create({
@@ -347,6 +502,9 @@ router.post("/trips/:id/cancel", isDriver, async (req: any, res) => {
   });
 
   if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Account is inactive" });
+  }
 
   if (trip.driverId !== user.driver.id) {
     return res.status(403).json({ error: "Not authorized" });

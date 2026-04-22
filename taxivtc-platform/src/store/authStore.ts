@@ -13,8 +13,10 @@ interface User {
 interface AuthState {
   user: User | null;
   token: string | null;
+  isHydrating: boolean;
   setAuth: (user: User, token: string) => void;
-  logout: () => void;
+  hydrateSession: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -22,8 +24,34 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       token: null,
+      isHydrating: true,
       setAuth: (user, token) => set({ user, token }),
-      logout: () => set({ user: null, token: null }),
+      hydrateSession: async () => {
+        try {
+          const res = await fetch('/api/auth/me');
+          if (!res.ok) {
+            set({ user: null, token: null, isHydrating: false });
+            return;
+          }
+
+          const user = await res.json();
+          set((state) => ({
+            user,
+            token: state.token ?? 'session-cookie',
+            isHydrating: false,
+          }));
+        } catch {
+          set({ user: null, token: null, isHydrating: false });
+        }
+      },
+      logout: async () => {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST' });
+        } catch {
+          // Ignore logout network errors and clear local session anyway.
+        }
+        set({ user: null, token: null, isHydrating: false });
+      },
     }),
     {
       name: 'taxi-auth-storage',

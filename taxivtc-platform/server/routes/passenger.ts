@@ -3,6 +3,9 @@ import { PrismaClient } from "@prisma/client";
 import { dispatchTrip } from "../services/dispatch";
 import { tripEventEmitter } from "../sse";
 import { customAlphabet, nanoid } from "nanoid";
+import { publicUserSelect } from "../lib/publicUser";
+import { createTripSchema, formatValidationError, quoteSchema } from "../lib/validation";
+import { ZodError } from "zod";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -20,13 +23,13 @@ const isPassenger = (req: any, res: any, next: any) => {
 
 router.post("/quote", isPassenger, async (req, res) => {
   try {
-    const { originText, destinationText } = req.body;
-    if (!originText || !destinationText) {
-      return res.status(400).json({ error: "Origin and destination are required." });
-    }
+    const { originText, destinationText } = quoteSchema.parse(req.body);
     const quote = await calculateQuote({ originText, destinationText });
     res.json(quote);
   } catch (error: any) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
     res.status(400).json({ error: "Could not calculate quote", details: error.message });
   }
 });
@@ -47,8 +50,8 @@ router.get("/trips/active", isPassenger, async (req: any, res) => {
       }
     },
     include: { 
-      passenger: { include: { user: true } }, 
-      driver: { include: { user: true } },
+      passenger: { include: { user: { select: publicUserSelect } } }, 
+      driver: { include: { user: { select: publicUserSelect } } },
       events: true
     },
     orderBy: { requestedAt: 'desc' }
@@ -67,8 +70,8 @@ router.get("/trips/active", isPassenger, async (req: any, res) => {
         }
       },
       include: { 
-        passenger: { include: { user: true } }, 
-        driver: { include: { user: true } },
+        passenger: { include: { user: { select: publicUserSelect } } }, 
+        driver: { include: { user: { select: publicUserSelect } } },
         events: true
       },
       orderBy: { requestedAt: 'desc' }
@@ -80,21 +83,26 @@ router.get("/trips/active", isPassenger, async (req: any, res) => {
 });
 
 router.post("/trips", isPassenger, async (req: any, res) => {
-  const { 
-    origin, // Now { text, coords }
-    destination, // Now { text, coords }
-    agreedPrice, 
-    distanceMeters, 
+  let tripInput;
+  try {
+    tripInput = createTripSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid trip payload" });
+  }
+
+  const {
+    origin,
+    destination,
+    agreedPrice,
+    distanceMeters,
     durationSeconds,
     pricingRuleId,
     breakdown,
-    paymentMethod = 'in_app'
-  } = req.body;
-  
-  // Basic validation
-  if (!origin?.coords || !destination?.coords) {
-    return res.status(400).json({ error: "Invalid origin or destination data." });
-  }
+    paymentMethod,
+  } = tripInput;
 
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
@@ -152,21 +160,42 @@ router.post("/trips", isPassenger, async (req: any, res) => {
   tripEventEmitter.emit('trip_update', trip);
 });
 
-router.get("/trips/:id", isPassenger, async (req, res) => {
-  const trip = await prisma.trip.findUnique({
-    where: { id: req.params.id },
+router.get("/trips/:id", isPassenger, async (req: any, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { passenger: true },
+  });
+
+  if (!user?.passenger) return res.status(400).json({ error: "Passenger profile missing" });
+
+  const trip = await prisma.trip.findFirst({
+    where: {
+      id: req.params.id,
+      passengerId: user.passenger.id,
+    },
     include: { 
-      passenger: { include: { user: true } }, 
-      driver: { include: { user: true } },
+      passenger: { include: { user: { select: publicUserSelect } } }, 
+      driver: { include: { user: { select: publicUserSelect } } },
       events: true
     },
   });
+  if (!trip) return res.status(404).json({ error: "Trip not found" });
   res.json(trip);
 });
 
 router.post("/trips/:id/cancel", isPassenger, async (req: any, res) => {
-  const trip = await prisma.trip.findUnique({ 
-    where: { id: req.params.id },
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { passenger: true },
+  });
+
+  if (!user?.passenger) return res.status(400).json({ error: "Passenger profile missing" });
+
+  const trip = await prisma.trip.findFirst({ 
+    where: {
+      id: req.params.id,
+      passengerId: user.passenger.id,
+    },
     include: { pricingRule: true }
   });
   
@@ -213,7 +242,19 @@ router.post("/trips/:id/cancel", isPassenger, async (req: any, res) => {
 });
 
 router.post("/trips/:id/payment/confirm", isPassenger, async (req: any, res) => {
-  const trip = await prisma.trip.findUnique({ where: { id: req.params.id } });
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { passenger: true },
+  });
+
+  if (!user?.passenger) return res.status(400).json({ error: "Passenger profile missing" });
+
+  const trip = await prisma.trip.findFirst({
+    where: {
+      id: req.params.id,
+      passengerId: user.passenger.id,
+    }
+  });
   if (!trip) return res.status(404).json({ error: "Trip not found" });
 
   if (!['completed', 'no_show', 'cancelled'].includes(trip.status)) {
@@ -238,7 +279,7 @@ router.post("/trips/:id/payment/confirm", isPassenger, async (req: any, res) => 
       paymentIntentId: `pi_${nanoid()}`,
       receiptReference: `RCPT-${generateReceiptReference()}`
     },
-    include: { driver: { include: { user: true } } }
+    include: { driver: { include: { user: { select: publicUserSelect } } } }
   });
 
   await prisma.tripEvent.create({
@@ -259,7 +300,7 @@ router.get("/history", isPassenger, async (req: any, res) => {
   const trips = await prisma.trip.findMany({
     where: { passengerId: user?.passenger?.id },
     orderBy: { requestedAt: 'desc' },
-    include: { driver: { include: { user: true } } }
+    include: { driver: { include: { user: { select: publicUserSelect } } } }
   });
   res.json(trips);
 });

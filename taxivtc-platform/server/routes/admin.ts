@@ -1,6 +1,16 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { tripEventEmitter } from "../sse";
+import { publicUserSelect } from "../lib/publicUser";
+import {
+  adminCorrectPaymentSchema,
+  adminNotesSchema,
+  adminVerifyDriverSchema,
+  createLicenseSchema,
+  createPricingRuleSchema,
+  formatValidationError,
+} from "../lib/validation";
+import { ZodError } from "zod";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -13,8 +23,8 @@ const isAdmin = (req: any, res: any, next: any) => {
 router.get("/trips", isAdmin, async (req, res) => {
   const trips = await prisma.trip.findMany({
     include: { 
-      passenger: { include: { user: true } }, 
-      driver: { include: { user: true } } 
+      passenger: { include: { user: { select: publicUserSelect } } }, 
+      driver: { include: { user: { select: publicUserSelect } } } 
     },
     orderBy: { requestedAt: 'desc' }
   });
@@ -23,29 +33,49 @@ router.get("/trips", isAdmin, async (req, res) => {
 
 router.get("/drivers", isAdmin, async (req, res) => {
   const drivers = await prisma.driver.findMany({
-    include: { user: true, taxiLicense: true }
+    include: { user: { select: publicUserSelect }, taxiLicense: true }
   });
   res.json(drivers);
 });
 
 router.post("/drivers/:id/verify", isAdmin, async (req, res) => {
+  let verificationInput;
+  try {
+    verificationInput = adminVerifyDriverSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid driver verification payload" });
+  }
+
   const driver = await prisma.driver.update({
     where: { id: req.params.id },
-    data: { verificationStatus: req.body.status }
+    data: { verificationStatus: verificationInput.status }
   });
   res.json(driver);
 });
 
 router.get("/licenses", isAdmin, async (req, res) => {
   const licenses = await prisma.taxiLicense.findMany({
-    include: { drivers: { include: { user: true } } }
+    include: { drivers: { include: { user: { select: publicUserSelect } } } }
   });
   res.json(licenses);
 });
 
 router.post("/licenses", isAdmin, async (req, res) => {
+  let licenseInput;
+  try {
+    licenseInput = createLicenseSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid license payload" });
+  }
+
   const license = await prisma.taxiLicense.create({
-    data: req.body
+    data: licenseInput
   });
   res.json(license);
 });
@@ -56,14 +86,38 @@ router.get("/pricing-rules", isAdmin, async (req, res) => {
 });
 
 router.post("/pricing-rules", isAdmin, async (req, res) => {
+  let pricingRuleInput;
+  try {
+    pricingRuleInput = createPricingRuleSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid pricing rule payload" });
+  }
+
   const rule = await prisma.pricingRule.create({
-    data: req.body
+    data: {
+      ...pricingRuleInput,
+      activeFrom: pricingRuleInput.activeFrom ? new Date(pricingRuleInput.activeFrom) : undefined,
+      activeTo: pricingRuleInput.activeTo ? new Date(pricingRuleInput.activeTo) : undefined,
+    }
   });
   res.json(rule);
 });
 
 router.post("/trips/:id/correct-payment", isAdmin, async (req, res) => {
-  const { paymentStatus, finalPrice } = req.body;
+  let paymentInput;
+  try {
+    paymentInput = adminCorrectPaymentSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid payment correction payload" });
+  }
+
+  const { paymentStatus, finalPrice } = paymentInput;
   const trip = await prisma.trip.update({
     where: { id: req.params.id },
     data: { paymentStatus, finalPrice }
@@ -88,7 +142,17 @@ router.post("/trips/:id/dispute", isAdmin, async (req, res) => {
 });
 
 router.post("/trips/:id/notes", isAdmin, async (req, res) => {
-  const { notes } = req.body;
+  let notesInput;
+  try {
+    notesInput = adminNotesSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid notes payload" });
+  }
+
+  const { notes } = notesInput;
   const trip = await prisma.trip.update({
     where: { id: req.params.id },
     data: { internalNotes: notes }

@@ -1,25 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { Car, LogOut, Users, ShieldCheck, DollarSign, List, Map } from 'lucide-react';
-
-const containerStyle = {
-  width: '100%',
-  height: '100%',
-};
-
-const center = {
-  lat: 43.3623,
-  lng: -8.4115
-};
-
-const libraries: "places"[] = ["places"];
+import { fetchJson } from '../../lib/api';
+const LiveMap = lazy(() => import('./LiveMap'));
 
 interface DriverLocation {
   driverId: string;
   lat: number;
   lng: number;
   heading: number;
+}
+
+function formatCurrency(value?: number | null) {
+  if (typeof value !== 'number') return '--';
+  return `${value.toFixed(2)}€`;
 }
 
 export default function AdminHome() {
@@ -31,15 +25,11 @@ export default function AdminHome() {
   const [drivers, setDrivers] = useState([]);
   const [licenses, setLicenses] = useState([]);
   const [rules, setRules] = useState([]);
-
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY!,
-    libraries,
-  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const eventSource = new EventSource(`/api/events/drivers?token=${token}&role=admin`);
+    const eventSource = new EventSource('/api/events/drivers');
 
     eventSource.addEventListener('driver_location_update', (e) => {
       const location = JSON.parse(e.data);
@@ -57,17 +47,115 @@ export default function AdminHome() {
   }, [token]);
   
   useEffect(() => {
-    const fetchData = async (endpoint: string, setter: Function) => {
-      const res = await fetch(`/api/admin/${endpoint}`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      setter(data);
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const [nextTrips, nextDrivers, nextLicenses, nextRules] = await Promise.all([
+          fetchJson<any[]>('/api/admin/trips', { headers: { Authorization: `Bearer ${token}` } }),
+          fetchJson<any[]>('/api/admin/drivers', { headers: { Authorization: `Bearer ${token}` } }),
+          fetchJson<any[]>('/api/admin/licenses', { headers: { Authorization: `Bearer ${token}` } }),
+          fetchJson<any[]>('/api/admin/pricing-rules', { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        setTrips(nextTrips);
+        setDrivers(nextDrivers);
+        setLicenses(nextLicenses);
+        setRules(nextRules);
+      } catch (nextError) {
+        setError(nextError instanceof Error ? nextError.message : 'No se pudieron cargar los datos de admin');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    fetchData('trips', setTrips);
-    fetchData('drivers', setDrivers);
-    fetchData('licenses', setLicenses);
-    fetchData('pricing-rules', setRules);
+    fetchData();
   }, [token, view]);
+
+  const summaryCards = [
+    { label: 'Viajes', value: trips.length },
+    { label: 'Conductores', value: drivers.length },
+    { label: 'Licencias', value: licenses.length },
+    { label: 'Reglas', value: rules.length },
+  ];
+
+  const renderTrips = () => (
+    <div className="space-y-3">
+      {trips.map((trip: any) => (
+        <div key={trip.id} className="rounded-2xl border border-zinc-100 p-4">
+          <div className="flex justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">{trip.bookingReference || trip.id}</p>
+              <p className="font-bold text-zinc-900">{trip.passenger?.user?.name || 'Pasajero'}</p>
+              <p className="text-sm text-zinc-500 truncate">{trip.originText}</p>
+              <p className="text-sm text-zinc-800 truncate">{trip.destinationText}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-bold uppercase tracking-widest text-zinc-400">{trip.status}</p>
+              <p className="text-lg font-black">{formatCurrency(trip.finalPrice ?? trip.agreedPrice ?? trip.estimatedPrice)}</p>
+              <p className="text-xs text-zinc-500">{trip.paymentStatus}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+      {trips.length === 0 && <div className="text-sm text-zinc-500">Sin viajes todavía.</div>}
+    </div>
+  );
+
+  const renderDrivers = () => (
+    <div className="space-y-3">
+      {drivers.map((driver: any) => (
+        <div key={driver.id} className="rounded-2xl border border-zinc-100 p-4 flex justify-between gap-4">
+          <div>
+            <p className="font-bold text-zinc-900">{driver.user?.name || 'Conductor'}</p>
+            <p className="text-sm text-zinc-500">{driver.user?.email}</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 mt-1">{driver.licenseNumber}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-bold uppercase tracking-widest text-zinc-400">{driver.status}</p>
+            <p className="text-xs text-zinc-500">{driver.verificationStatus}</p>
+          </div>
+        </div>
+      ))}
+      {drivers.length === 0 && <div className="text-sm text-zinc-500">Sin conductores registrados.</div>}
+    </div>
+  );
+
+  const renderLicenses = () => (
+    <div className="space-y-3">
+      {licenses.map((license: any) => (
+        <div key={license.id} className="rounded-2xl border border-zinc-100 p-4 flex justify-between gap-4">
+          <div>
+            <p className="font-bold text-zinc-900">{license.licenseCode}</p>
+            <p className="text-sm text-zinc-500">{license.municipality}</p>
+            <p className="text-xs text-zinc-500">{license.ownerName}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-bold uppercase tracking-widest text-zinc-400">{license.isActive ? 'Activa' : 'Inactiva'}</p>
+            <p className="text-xs text-zinc-500">{license.drivers?.length || 0} conductores</p>
+          </div>
+        </div>
+      ))}
+      {licenses.length === 0 && <div className="text-sm text-zinc-500">Sin licencias cargadas.</div>}
+    </div>
+  );
+
+  const renderRules = () => (
+    <div className="space-y-3">
+      {rules.map((rule: any) => (
+        <div key={rule.id} className="rounded-2xl border border-zinc-100 p-4 flex justify-between gap-4">
+          <div>
+            <p className="font-bold text-zinc-900">{rule.city}</p>
+            <p className="text-sm text-zinc-500">Base {formatCurrency(rule.baseFare)} · Mínimo {formatCurrency(rule.minimumFare)}</p>
+          </div>
+          <div className="text-right text-xs text-zinc-500">
+            <p>Día {formatCurrency(rule.perKmDay)}/km</p>
+            <p>Noche {formatCurrency(rule.perKmNight)}/km</p>
+          </div>
+        </div>
+      ))}
+      {rules.length === 0 && <div className="text-sm text-zinc-500">Sin reglas de precio definidas.</div>}
+    </div>
+  );
 
 
   return (
@@ -107,40 +195,40 @@ export default function AdminHome() {
       </aside>
       
       <main className="flex-1 relative">
-        {view === 'map' && isLoaded && (
-          <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={center}
-            zoom={13}
-            options={{ disableDefaultUI: true, mapId: 'b19f4a8d3f54d4de' }}
-          >
-            {Object.values(liveDrivers).map((driver: DriverLocation) => (
-              <Marker
-                key={driver.driverId}
-                position={{ lat: driver.lat, lng: driver.lng }}
-                icon={{
-                  path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                  scale: 6,
-                  rotation: driver.heading,
-                  fillColor: "#000",
-                  fillOpacity: 1,
-                  strokeWeight: 2,
-                  strokeColor: "#FFF",
-                }}
-              />
-            ))}
-          </GoogleMap>
+        {view === 'map' && (
+          <Suspense fallback={<div className="h-full w-full flex items-center justify-center bg-zinc-100 text-zinc-500 text-sm font-medium">Cargando mapa...</div>}>
+            <LiveMap liveDrivers={liveDrivers} />
+          </Suspense>
         )}
         
         <div className={`p-8 ${view === 'map' ? 'hidden' : 'block'}`}>
           <h1 className="text-3xl font-black capitalize tracking-tighter">{view}</h1>
+          <div className="grid grid-cols-4 gap-3 mt-4">
+            {summaryCards.map((card) => (
+              <div key={card.label} className="rounded-2xl border border-zinc-100 bg-white p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{card.label}</p>
+                <p className="text-2xl font-black text-zinc-900 mt-2">{card.value}</p>
+              </div>
+            ))}
+          </div>
+          {error && (
+            <div className="mt-4 bg-red-50 text-red-700 p-4 rounded-xl border border-red-100 text-sm font-medium">
+              {error}
+            </div>
+          )}
           <div className="mt-4 bg-white p-4 rounded-xl border border-zinc-100">
-            <pre className="text-xs max-h-96 overflow-auto">
-              {view === 'trips' && JSON.stringify(trips, null, 2)}
-              {view === 'drivers' && JSON.stringify(drivers, null, 2)}
-              {view === 'licenses' && JSON.stringify(licenses, null, 2)}
-              {view === 'rules' && JSON.stringify(rules, null, 2)}
-            </pre>
+            {isLoading ? (
+              <div className="h-48 flex items-center justify-center text-zinc-500 text-sm font-medium">
+                Cargando datos operativos...
+              </div>
+            ) : (
+              <>
+                {view === 'trips' && renderTrips()}
+                {view === 'drivers' && renderDrivers()}
+                {view === 'licenses' && renderLicenses()}
+                {view === 'rules' && renderRules()}
+              </>
+            )}
           </div>
         </div>
         

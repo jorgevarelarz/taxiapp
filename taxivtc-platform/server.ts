@@ -2,8 +2,9 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import cors from "cors";
-import jwt from "jsonwebtoken";
 import { fileURLToPath } from "url";
+import { extractAuthToken, getJwtSecret, verifyAuthToken } from "./server/lib/auth";
+import { appConfig } from "./server/lib/config";
 
 // Route imports
 import authRoutes from "./server/routes/auth";
@@ -16,29 +17,44 @@ import { subscribeToTrips, subscribeToDriverLocations } from "./server/sse";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const JWT_SECRET = process.env.JWT_SECRET || "super-secret-taxi-key";
-
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const startedAt = Date.now();
 
-  app.use(cors());
-  app.use(express.json());
+  app.disable("x-powered-by");
+  if (appConfig.trustProxy) {
+    app.set("trust proxy", 1);
+  }
+
+  app.use((req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "geolocation=(self)");
+    next();
+  });
+
+  app.use(
+    cors({
+      origin(origin, callback) {
+        if (!origin || appConfig.allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+        callback(new Error("Origin not allowed by CORS"));
+      },
+      credentials: true,
+    })
+  );
+  app.use(express.json({ limit: appConfig.requestBodyLimit }));
 
   // --- Auth Middleware ---
   const authenticate = (req: any, res: any, next: any) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      if (req.query.token) {
-        req.headers.authorization = `Bearer ${req.query.token}`;
-      } else {
-        return res.status(401).json({ error: "No token provided" });
-      }
+    const token = extractAuthToken(req);
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
     }
-
-    const token = req.headers.authorization.split(" ")[1];
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const decoded = verifyAuthToken(token);
       req.user = decoded;
       next();
     } catch (err) {
@@ -56,7 +72,13 @@ async function startServer() {
 
   // Health check
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date() });
+    res.json({
+      status: "ok",
+      timestamp: new Date(),
+      uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
+      environment: appConfig.nodeEnv,
+      version: "0.1.0",
+    });
   });
 
   // --- Vite Setup ---
@@ -74,8 +96,10 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`TaxiVTC Platform running on http://localhost:${PORT}`);
+  getJwtSecret();
+
+  app.listen(appConfig.port, "0.0.0.0", () => {
+    console.log(`TaxiVTC Platform running on http://localhost:${appConfig.port}`);
   });
 }
 
