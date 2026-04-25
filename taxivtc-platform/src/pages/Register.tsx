@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { Car, User, ShieldCheck } from 'lucide-react';
+import { User, ShieldCheck } from 'lucide-react';
+import { Logo, Button, Input, Card } from '../components/ui';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -31,107 +32,99 @@ export default function Register() {
       } else {
         setError(data.error);
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexión');
     }
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4 font-sans">
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-zinc-100">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-            <Car className="text-white w-8 h-8" />
-          </div>
-          <h1 className="text-3xl font-bold text-zinc-900 tracking-tight">Únete a TaxiVTC</h1>
-          <p className="text-zinc-500 mt-2">Crea tu cuenta en segundos</p>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh' }} className="flex items-center justify-center p-5">
+      <div className="w-full max-w-sm space-y-10">
+        <div className="flex flex-col items-center gap-3">
+          <Logo size="lg" />
+          <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Crea tu cuenta en segundos</p>
         </div>
 
-        {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm font-medium border border-red-100">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, role: 'passenger' })}
-              className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${
-                formData.role === 'passenger' ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-100 hover:border-zinc-200'
-              }`}
-            >
-              <User className={`w-6 h-6 mb-2 ${formData.role === 'passenger' ? 'text-zinc-900' : 'text-zinc-400'}`} />
-              <span className={`text-sm font-bold ${formData.role === 'passenger' ? 'text-zinc-900' : 'text-zinc-400'}`}>Pasajero</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, role: 'driver' })}
-              className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${
-                formData.role === 'driver' ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-100 hover:border-zinc-200'
-              }`}
-            >
-              <ShieldCheck className={`w-6 h-6 mb-2 ${formData.role === 'driver' ? 'text-zinc-900' : 'text-zinc-400'}`} />
-              <span className={`text-sm font-bold ${formData.role === 'driver' ? 'text-zinc-900' : 'text-zinc-400'}`}>Conductor</span>
-            </button>
-          </div>
-
+        <Card className="p-8 space-y-6">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Nombre Completo</label>
-            <input
+            <h1 className="text-xl font-semibold" style={{ color: 'var(--ink)' }}>Únete a NORA</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--ink-3)' }}>Elige cómo quieres usar la plataforma</p>
+          </div>
+
+          {error && (
+            <div style={{ background: 'color-mix(in srgb, var(--danger) 12%, transparent)', borderColor: 'color-mix(in srgb, var(--danger) 25%, transparent)', color: 'var(--danger)' }}
+              className="border p-3 rounded-[var(--r-sm)] text-sm font-medium">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Role selector */}
+            <div className="grid grid-cols-2 gap-3">
+              {(['passenger', 'driver'] as const).map((role) => {
+                const active = formData.role === role;
+                const Icon = role === 'passenger' ? User : ShieldCheck;
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role })}
+                    style={{
+                      background: active ? 'color-mix(in srgb, var(--accent) 8%, var(--panel-2))' : 'var(--panel-2)',
+                      borderColor: active ? 'var(--accent)' : 'var(--line)',
+                      color: active ? 'var(--accent)' : 'var(--ink-3)',
+                      borderRadius: 'var(--r-md)',
+                    }}
+                    className="flex flex-col items-center gap-2 p-4 border transition-all"
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-xs font-semibold capitalize">{role === 'passenger' ? 'Pasajero' : 'Conductor'}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <Input
+              label="Nombre Completo"
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 outline-none"
               placeholder="Juan Pérez"
               required
             />
-          </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Email</label>
-            <input
+            <Input
+              label="Email"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 outline-none"
               placeholder="tu@email.com"
               required
             />
-          </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Teléfono</label>
-            <input
+            <Input
+              label="Teléfono"
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 outline-none"
               placeholder="+34 600 000 000"
               required
             />
-          </div>
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">Contraseña</label>
-            <input
+            <Input
+              label="Contraseña"
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl border border-zinc-200 focus:ring-2 focus:ring-zinc-900 outline-none"
               placeholder="••••••••"
               required
             />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-zinc-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-zinc-800 transition-colors shadow-lg active:scale-[0.98] mt-4"
-          >
-            Crear Cuenta
-          </button>
-        </form>
+            <Button variant="primary" size="lg" fullWidth type="submit">
+              Crear Cuenta
+            </Button>
+          </form>
+        </Card>
 
-        <p className="mt-8 text-center text-zinc-500 text-sm">
+        <p className="text-center text-sm" style={{ color: 'var(--ink-3)' }}>
           ¿Ya tienes cuenta?{' '}
-          <Link to="/login" className="text-zinc-900 font-bold hover:underline">
+          <Link to="/login" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
             Inicia sesión
           </Link>
         </p>
