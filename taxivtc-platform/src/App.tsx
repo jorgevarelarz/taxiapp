@@ -12,6 +12,7 @@ const PassengerHistory = lazy(() => import('./pages/passenger/History'));
 const PassengerProfile = lazy(() => import('./pages/passenger/Profile'));
 const DriverHome = lazy(() => import('./pages/driver/Home'));
 const DriverEarnings = lazy(() => import('./pages/driver/Earnings'));
+const DriverHistory = lazy(() => import('./pages/driver/History'));
 const DriverProfile = lazy(() => import('./pages/driver/Profile'));
 const AdminHome = lazy(() => import('./pages/admin/Home'));
 
@@ -68,6 +69,11 @@ export default function App() {
             <Route path="/driver/earnings" element={
               <ProtectedRoute role="driver">
                 <DriverEarnings />
+              </ProtectedRoute>
+            } />
+            <Route path="/driver/history" element={
+              <ProtectedRoute role="driver">
+                <DriverHistory />
               </ProtectedRoute>
             } />
             <Route path="/driver/profile" element={

@@ -36,6 +36,9 @@ export default function AdminHome() {
   const [showRuleForm, setShowRuleForm] = useState(false);
   const [ruleForm, setRuleForm] = useState({ city: '', baseFare: '', minimumFare: '', perKmDay: '', perKmNight: '', waitingPerHour: '' });
   const [isSavingRule, setIsSavingRule] = useState(false);
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
+  const [editRuleForm, setEditRuleForm] = useState({ city: '', baseFare: '', minimumFare: '', perKmDay: '', perKmNight: '', waitingPerHour: '' });
+  const [isDeletingRuleId, setIsDeletingRuleId] = useState<string | null>(null);
 
   const counts: Record<string, number> = { trips: trips.length, drivers: drivers.length, licenses: licenses.length, rules: rules.length };
 
@@ -52,6 +55,59 @@ export default function AdminHome() {
       setError('No se pudo actualizar la verificación');
     } finally {
       setVerifyingId(null);
+    }
+  };
+
+  const startEditRule = (rule: PricingRule) => {
+    setEditingRuleId(rule.id);
+    setEditRuleForm({
+      city: rule.city,
+      baseFare: String(rule.baseFare),
+      minimumFare: String(rule.minimumFare),
+      perKmDay: String(rule.perKmDay),
+      perKmNight: String(rule.perKmNight),
+      waitingPerHour: String((rule as any).waitingPerHour ?? ''),
+    });
+  };
+
+  const saveEditRule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRuleId) return;
+    setIsSavingRule(true);
+    try {
+      const updated = await fetchJson<PricingRule>(`/api/admin/pricing-rules/${editingRuleId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          city: editRuleForm.city,
+          baseFare: parseFloat(editRuleForm.baseFare),
+          minimumFare: parseFloat(editRuleForm.minimumFare),
+          perKmDay: parseFloat(editRuleForm.perKmDay),
+          perKmNight: parseFloat(editRuleForm.perKmNight),
+          waitingPerHour: parseFloat(editRuleForm.waitingPerHour),
+        }),
+      });
+      setRules((prev) => prev.map((r) => (r.id === editingRuleId ? updated : r)));
+      setEditingRuleId(null);
+    } catch {
+      setError('No se pudo actualizar la regla');
+    } finally {
+      setIsSavingRule(false);
+    }
+  };
+
+  const deleteRule = async (ruleId: string) => {
+    setIsDeletingRuleId(ruleId);
+    try {
+      await fetchJson(`/api/admin/pricing-rules/${ruleId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRules((prev) => prev.filter((r) => r.id !== ruleId));
+    } catch {
+      setError('No se pudo eliminar la regla');
+    } finally {
+      setIsDeletingRuleId(null);
     }
   };
 
@@ -231,17 +287,51 @@ export default function AdminHome() {
 
       <div className="space-y-2">
         {rules.map((rule) => (
-          <Card key={rule.id} variant="nested" className="p-4 flex justify-between gap-4">
-            <div>
-              <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{rule.city}</p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
-                Base {formatCurrency(rule.baseFare)} · Mínimo {formatCurrency(rule.minimumFare)}
-              </p>
-            </div>
-            <div className="text-right flex-shrink-0">
-              <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Día {formatCurrency(rule.perKmDay)}/km</p>
-              <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Noche {formatCurrency(rule.perKmNight)}/km</p>
-            </div>
+          <Card key={rule.id} variant="nested" className="p-4 space-y-3">
+            {editingRuleId === rule.id ? (
+              <form onSubmit={saveEditRule} className="space-y-3">
+                <Input label="Ciudad" value={editRuleForm.city} onChange={(e) => setEditRuleForm({ ...editRuleForm, city: e.target.value })} required />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input label="Base (€)" type="number" step="0.01" value={editRuleForm.baseFare} onChange={(e) => setEditRuleForm({ ...editRuleForm, baseFare: e.target.value })} required />
+                  <Input label="Mínimo (€)" type="number" step="0.01" value={editRuleForm.minimumFare} onChange={(e) => setEditRuleForm({ ...editRuleForm, minimumFare: e.target.value })} required />
+                  <Input label="€/km día" type="number" step="0.01" value={editRuleForm.perKmDay} onChange={(e) => setEditRuleForm({ ...editRuleForm, perKmDay: e.target.value })} required />
+                  <Input label="€/km noche" type="number" step="0.01" value={editRuleForm.perKmNight} onChange={(e) => setEditRuleForm({ ...editRuleForm, perKmNight: e.target.value })} required />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" className="flex-1" type="button" onClick={() => setEditingRuleId(null)}>
+                    <X className="w-3.5 h-3.5" /> Cancelar
+                  </Button>
+                  <Button variant="primary" size="sm" className="flex-[2]" loading={isSavingRule} disabled={isSavingRule}>
+                    Guardar cambios
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{rule.city}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
+                      Base {formatCurrency(rule.baseFare)} · Mínimo {formatCurrency(rule.minimumFare)}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--ink-3)' }}>
+                      Día {formatCurrency(rule.perKmDay)}/km · Noche {formatCurrency(rule.perKmNight)}/km
+                    </p>
+                  </div>
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <Button variant="secondary" size="sm" onClick={() => startEditRule(rule)}>
+                      Editar
+                    </Button>
+                    <Button variant="danger" size="sm"
+                      loading={isDeletingRuleId === rule.id}
+                      disabled={isDeletingRuleId === rule.id}
+                      onClick={() => deleteRule(rule.id)}>
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
         ))}
         {rules.length === 0 && !showRuleForm && <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Sin reglas de precio definidas.</p>}

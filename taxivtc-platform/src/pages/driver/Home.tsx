@@ -1,7 +1,7 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { Navigation, LogOut, Car, User, Star, AlertCircle, TrendingUp, Wallet, Bell } from 'lucide-react';
+import { Navigation, LogOut, Car, User, Star, AlertCircle, TrendingUp, Wallet, Bell, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { fetchJson } from '../../lib/api';
 import { Logo, Card, Button, StatusDot, Spinner, MapContainer } from '../../components/ui';
@@ -547,6 +547,10 @@ export default function DriverHome() {
         <button onClick={() => navigate('/driver/earnings')} className="flex flex-col items-center gap-1">
           <TrendingUp className="w-5 h-5" style={{ color: 'var(--ink-4)' }} />
           <span className="text-eyebrow" style={{ color: 'var(--ink-4)' }}>Ingresos</span>
+        </button>
+        <button onClick={() => navigate('/driver/history')} className="flex flex-col items-center gap-1">
+          <History className="w-5 h-5" style={{ color: 'var(--ink-4)' }} />
+          <span className="text-eyebrow" style={{ color: 'var(--ink-4)' }}>Historial</span>
         </button>
         <button onClick={() => navigate('/driver/profile')} className="flex flex-col items-center gap-1">
           <User className="w-5 h-5" style={{ color: 'var(--ink-4)' }} />

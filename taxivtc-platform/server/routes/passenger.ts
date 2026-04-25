@@ -347,6 +347,19 @@ router.post("/trips/:id/rate", isPassenger, async (req: any, res) => {
     },
   });
 
+  const agg = await prisma.rating.aggregate({
+    where: { driverId: trip.driverId },
+    _avg: { score: true },
+    _count: { score: true },
+  });
+  await prisma.driver.update({
+    where: { id: trip.driverId },
+    data: {
+      ratingAvg: agg._avg.score ?? 5.0,
+      ratingCount: agg._count.score,
+    },
+  });
+
   res.json(rating);
 });
 

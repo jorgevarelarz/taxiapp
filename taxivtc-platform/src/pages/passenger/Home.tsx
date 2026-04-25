@@ -40,6 +40,8 @@ export default function PassengerHome() {
   const [ratingTripId, setRatingTripId] = useState<string | null>(null);
   const [ratingScore, setRatingScore] = useState(0);
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
   const [isRequestingTrip, setIsRequestingTrip] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
@@ -130,6 +132,25 @@ export default function PassengerHome() {
       setUiError(error instanceof Error ? error.message : 'No se pudo completar el pago');
     } finally {
       setIsPaying(false);
+    }
+  };
+
+  const handleCancelTrip = async () => {
+    setIsCancelling(true);
+    try {
+      if (activeTrip?.id) {
+        await fetchJson(`/api/passenger/trips/${activeTrip.id}/cancel`, {
+          method: 'POST', headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+      setShowCancelModal(false);
+      setStep('idle');
+      setActiveTrip(null);
+    } catch (error) {
+      setUiError(error instanceof Error ? error.message : 'No se pudo cancelar el viaje');
+      setShowCancelModal(false);
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -448,19 +469,12 @@ export default function PassengerHome() {
                   </p>
                 </div>
                 <button
-                  onClick={async () => {
-                    if (activeTrip?.id) {
-                      try {
-                        await fetchJson(`/api/passenger/trips/${activeTrip.id}/cancel`, {
-                          method: 'POST', headers: { Authorization: `Bearer ${token}` },
-                        });
-                      } catch (error) {
-                        setUiError(error instanceof Error ? error.message : 'No se pudo cancelar el viaje');
-                        return;
-                      }
+                  onClick={() => {
+                    if (activeTrip?.dispatchStatus === 'no_driver_found') {
+                      setStep('idle'); setActiveTrip(null);
+                    } else {
+                      setShowCancelModal(true);
                     }
-                    setStep('idle');
-                    setActiveTrip(null);
                   }}
                   className="text-sm font-medium transition-colors hover:opacity-80"
                   style={{ color: activeTrip?.dispatchStatus === 'no_driver_found' ? 'var(--accent)' : 'var(--ink-3)' }}
@@ -486,10 +500,13 @@ export default function PassengerHome() {
                       <div>
                         <p className="text-eyebrow">Conductor</p>
                         <p className="text-base font-semibold" style={{ color: 'var(--ink)' }}>{activeTrip.driver?.user?.name || 'En camino'}</p>
-                        <div className="flex items-center gap-1 mt-0.5" style={{ color: 'var(--warn)' }}>
-                          <Star className="w-3 h-3 fill-current" />
-                          <span className="text-xs font-semibold">4.9</span>
-                        </div>
+                        {activeTrip.driver?.ratingCount > 0 && (
+                          <div className="flex items-center gap-1 mt-0.5" style={{ color: 'var(--warn)' }}>
+                            <Star className="w-3 h-3 fill-current" />
+                            <span className="text-xs font-semibold">{activeTrip.driver.ratingAvg.toFixed(1)}</span>
+                            <span className="text-eyebrow">({activeTrip.driver.ratingCount})</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <span style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', color: 'var(--ink-2)' }}
@@ -607,6 +624,40 @@ export default function PassengerHome() {
           <span className="text-eyebrow" style={{ color: 'var(--ink-4)' }}>Perfil</span>
         </button>
       </nav>
+
+      {/* Cancel confirmation modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+          <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="w-full max-w-sm">
+            <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)' }}
+              className="p-8 space-y-5">
+              <div className="text-center space-y-1">
+                <h3 className="text-xl font-semibold" style={{ fontFamily: 'var(--font-serif)', color: 'var(--ink)' }}>
+                  ¿Cancelar el viaje?
+                </h3>
+                {activeTrip?.status === 'requested' ? (
+                  <p className="text-sm" style={{ color: 'var(--ok)' }}>Cancelación gratuita — el conductor aún no ha sido asignado.</p>
+                ) : (
+                  <p className="text-sm" style={{ color: 'var(--warn)' }}>
+                    Puede aplicarse una penalización de {activeTrip?.pricingRule?.cancellationFee ?? 5}€ por cancelación tardía.
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <Button variant="ghost" size="lg" className="flex-1" onClick={() => setShowCancelModal(false)}>
+                  Volver
+                </Button>
+                <Button variant="danger" size="lg" className="flex-[2]"
+                  loading={isCancelling} disabled={isCancelling}
+                  onClick={handleCancelTrip}>
+                  Sí, cancelar
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Rating modal */}
       {ratingTripId && (

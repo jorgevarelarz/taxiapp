@@ -106,6 +106,32 @@ router.post("/pricing-rules", isAdmin, async (req, res) => {
   res.json(rule);
 });
 
+router.patch("/pricing-rules/:id", isAdmin, async (req, res) => {
+  let input;
+  try {
+    input = createPricingRuleSchema.partial().parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid pricing rule payload" });
+  }
+  const rule = await prisma.pricingRule.update({
+    where: { id: req.params.id },
+    data: {
+      ...input,
+      activeFrom: input.activeFrom ? new Date(input.activeFrom) : undefined,
+      activeTo: input.activeTo ? new Date(input.activeTo) : undefined,
+    },
+  });
+  res.json(rule);
+});
+
+router.delete("/pricing-rules/:id", isAdmin, async (req, res) => {
+  await prisma.pricingRule.delete({ where: { id: req.params.id } });
+  res.status(204).end();
+});
+
 router.post("/trips/:id/correct-payment", isAdmin, async (req, res) => {
   let paymentInput;
   try {

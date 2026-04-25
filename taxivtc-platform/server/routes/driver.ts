@@ -534,6 +534,27 @@ router.post("/trips/:id/cancel", isDriver, async (req: any, res) => {
   res.json(updatedTrip);
 });
 
+router.get("/history", isDriver, async (req: any, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { driver: true },
+  });
+  if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+
+  const trips = await prisma.trip.findMany({
+    where: {
+      driverId: user.driver.id,
+      status: { in: ["completed", "no_show", "cancelled"] },
+    },
+    include: {
+      passenger: { include: { user: { select: publicUserSelect } } },
+    },
+    orderBy: { requestedAt: "desc" },
+    take: 50,
+  });
+  res.json(trips);
+});
+
 router.get("/profile", isDriver, async (req: any, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },

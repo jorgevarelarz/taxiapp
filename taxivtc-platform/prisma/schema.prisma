@@ -42,7 +42,9 @@ model Driver {
   taxiLicense        TaxiLicense? @relation(fields: [taxiLicenseId], references: [id])
   status             String       @default("offline") // online | offline | busy
   verificationStatus String       @default("pending") // pending | verified | rejected
-  
+  ratingAvg          Float        @default(5.0)
+  ratingCount        Int          @default(0)
+
   lat                Float?
   lng                Float?
   heading            Float?
