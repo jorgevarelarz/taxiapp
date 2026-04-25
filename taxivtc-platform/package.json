@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build",
-    "start": "npx prisma migrate deploy && tsx server.ts",
+    "start": "npx prisma db push --accept-data-loss && npx prisma db seed && tsx server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
