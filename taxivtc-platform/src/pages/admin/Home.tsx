@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { Car, LogOut, Users, ShieldCheck, DollarSign, List, Map } from 'lucide-react';
 import { fetchJson } from '../../lib/api';
+import type { Trip, Driver, License, PricingRule } from '../../types/api';
 const LiveMap = lazy(() => import('./LiveMap'));
 
 interface DriverLocation {
@@ -21,10 +22,10 @@ export default function AdminHome() {
   const [liveDrivers, setLiveDrivers] = useState<Record<string, DriverLocation>>({});
   const [view, setView] = useState('map'); // map, trips, drivers, licenses, rules
   
-  const [trips, setTrips] = useState([]);
-  const [drivers, setDrivers] = useState([]);
-  const [licenses, setLicenses] = useState([]);
-  const [rules, setRules] = useState([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [licenses, setLicenses] = useState<License[]>([]);
+  const [rules, setRules] = useState<PricingRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,10 +53,10 @@ export default function AdminHome() {
       setError(null);
       try {
         const [nextTrips, nextDrivers, nextLicenses, nextRules] = await Promise.all([
-          fetchJson<any[]>('/api/admin/trips', { headers: { Authorization: `Bearer ${token}` } }),
-          fetchJson<any[]>('/api/admin/drivers', { headers: { Authorization: `Bearer ${token}` } }),
-          fetchJson<any[]>('/api/admin/licenses', { headers: { Authorization: `Bearer ${token}` } }),
-          fetchJson<any[]>('/api/admin/pricing-rules', { headers: { Authorization: `Bearer ${token}` } }),
+          fetchJson<Trip[]>('/api/admin/trips', { headers: { Authorization: `Bearer ${token}` } }),
+          fetchJson<Driver[]>('/api/admin/drivers', { headers: { Authorization: `Bearer ${token}` } }),
+          fetchJson<License[]>('/api/admin/licenses', { headers: { Authorization: `Bearer ${token}` } }),
+          fetchJson<PricingRule[]>('/api/admin/pricing-rules', { headers: { Authorization: `Bearer ${token}` } }),
         ]);
         setTrips(nextTrips);
         setDrivers(nextDrivers);
@@ -80,7 +81,7 @@ export default function AdminHome() {
 
   const renderTrips = () => (
     <div className="space-y-3">
-      {trips.map((trip: any) => (
+      {trips.map((trip: Trip) => (
         <div key={trip.id} className="rounded-2xl border border-zinc-100 p-4">
           <div className="flex justify-between gap-4">
             <div>
@@ -103,7 +104,7 @@ export default function AdminHome() {
 
   const renderDrivers = () => (
     <div className="space-y-3">
-      {drivers.map((driver: any) => (
+      {drivers.map((driver: Driver) => (
         <div key={driver.id} className="rounded-2xl border border-zinc-100 p-4 flex justify-between gap-4">
           <div>
             <p className="font-bold text-zinc-900">{driver.user?.name || 'Conductor'}</p>
@@ -122,7 +123,7 @@ export default function AdminHome() {
 
   const renderLicenses = () => (
     <div className="space-y-3">
-      {licenses.map((license: any) => (
+      {licenses.map((license: License) => (
         <div key={license.id} className="rounded-2xl border border-zinc-100 p-4 flex justify-between gap-4">
           <div>
             <p className="font-bold text-zinc-900">{license.licenseCode}</p>
@@ -141,7 +142,7 @@ export default function AdminHome() {
 
   const renderRules = () => (
     <div className="space-y-3">
-      {rules.map((rule: any) => (
+      {rules.map((rule: PricingRule) => (
         <div key={rule.id} className="rounded-2xl border border-zinc-100 p-4 flex justify-between gap-4">
           <div>
             <p className="font-bold text-zinc-900">{rule.city}</p>
