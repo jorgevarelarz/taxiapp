@@ -106,6 +106,11 @@ export const ratingSchema = z.object({
   comment: z.string().trim().max(500).optional(),
 });
 
+export const updateProfileSchema = z.object({
+  name: nonEmptyTrimmedString.optional(),
+  phone: nonEmptyTrimmedString.optional(),
+});
+
 export function formatValidationError(error: ZodError) {
   const issue = error.issues[0];
   return issue ? `${issue.path.join(".") || "body"}: ${issue.message}` : "Invalid request body";

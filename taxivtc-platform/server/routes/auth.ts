@@ -11,7 +11,7 @@ import {
   verifyAuthToken,
 } from "../lib/auth";
 import { createRateLimiter } from "../lib/rateLimit";
-import { formatValidationError, loginSchema, registerSchema } from "../lib/validation";
+import { formatValidationError, loginSchema, registerSchema, updateProfileSchema } from "../lib/validation";
 import { ZodError } from "zod";
 
 const router = express.Router();
@@ -106,6 +106,38 @@ router.get("/me", async (req: any, res) => {
   } catch (e) {
     res.status(401).json({ error: "Invalid token" });
   }
+});
+
+router.patch("/me", async (req: any, res) => {
+  const token = extractAuthToken(req);
+  if (!token) return res.status(401).json({ error: "No token" });
+
+  let decoded: any;
+  try {
+    decoded = verifyAuthToken(token);
+  } catch {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+
+  let input;
+  try {
+    input = updateProfileSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid profile payload" });
+  }
+
+  const user = await prisma.user.update({
+    where: { id: decoded.id },
+    data: {
+      ...(input.name ? { name: input.name.trim() } : {}),
+      ...(input.phone ? { phone: input.phone.trim() } : {}),
+    },
+    include: { passenger: true, driver: true },
+  });
+  res.json(sanitizeUser(user));
 });
 
 router.post("/logout", async (_req, res) => {

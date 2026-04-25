@@ -9,8 +9,10 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const PassengerHome = lazy(() => import('./pages/passenger/Home'));
 const PassengerHistory = lazy(() => import('./pages/passenger/History'));
+const PassengerProfile = lazy(() => import('./pages/passenger/Profile'));
 const DriverHome = lazy(() => import('./pages/driver/Home'));
 const DriverEarnings = lazy(() => import('./pages/driver/Earnings'));
+const DriverProfile = lazy(() => import('./pages/driver/Profile'));
 const AdminHome = lazy(() => import('./pages/admin/Home'));
 
 const ProtectedRoute = ({ children, role }: { children: React.ReactNode; role?: string }) => {
@@ -52,6 +54,11 @@ export default function App() {
                 <PassengerHistory />
               </ProtectedRoute>
             } />
+            <Route path="/passenger/profile" element={
+              <ProtectedRoute role="passenger">
+                <PassengerProfile />
+              </ProtectedRoute>
+            } />
             
             <Route path="/driver" element={
               <ProtectedRoute role="driver">
@@ -61,6 +68,11 @@ export default function App() {
             <Route path="/driver/earnings" element={
               <ProtectedRoute role="driver">
                 <DriverEarnings />
+              </ProtectedRoute>
+            } />
+            <Route path="/driver/profile" element={
+              <ProtectedRoute role="driver">
+                <DriverProfile />
               </ProtectedRoute>
             } />
             

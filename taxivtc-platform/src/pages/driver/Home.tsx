@@ -548,7 +548,7 @@ export default function DriverHome() {
           <TrendingUp className="w-5 h-5" style={{ color: 'var(--ink-4)' }} />
           <span className="text-eyebrow" style={{ color: 'var(--ink-4)' }}>Ingresos</span>
         </button>
-        <button className="flex flex-col items-center gap-1">
+        <button onClick={() => navigate('/driver/profile')} className="flex flex-col items-center gap-1">
           <User className="w-5 h-5" style={{ color: 'var(--ink-4)' }} />
           <span className="text-eyebrow" style={{ color: 'var(--ink-4)' }}>Perfil</span>
         </button>

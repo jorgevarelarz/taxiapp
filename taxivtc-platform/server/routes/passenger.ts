@@ -51,7 +51,7 @@ router.get("/trips/active", isPassenger, async (req: any, res) => {
     },
     include: { 
       passenger: { include: { user: { select: publicUserSelect } } }, 
-      driver: { include: { user: { select: publicUserSelect } } },
+      driver: { include: { user: { select: publicUserSelect }, taxiLicense: { include: { vehicles: true } } } },
       events: true
     },
     orderBy: { requestedAt: 'desc' }
@@ -71,7 +71,7 @@ router.get("/trips/active", isPassenger, async (req: any, res) => {
       },
       include: { 
         passenger: { include: { user: { select: publicUserSelect } } }, 
-        driver: { include: { user: { select: publicUserSelect } } },
+        driver: { include: { user: { select: publicUserSelect }, taxiLicense: { include: { vehicles: true } } } },
         events: true
       },
       orderBy: { requestedAt: 'desc' }
@@ -175,7 +175,7 @@ router.get("/trips/:id", isPassenger, async (req: any, res) => {
     },
     include: { 
       passenger: { include: { user: { select: publicUserSelect } } }, 
-      driver: { include: { user: { select: publicUserSelect } } },
+      driver: { include: { user: { select: publicUserSelect }, taxiLicense: { include: { vehicles: true } } } },
       events: true
     },
   });
@@ -279,7 +279,7 @@ router.post("/trips/:id/payment/confirm", isPassenger, async (req: any, res) => 
       paymentIntentId: `pi_${nanoid()}`,
       receiptReference: `RCPT-${generateReceiptReference()}`
     },
-    include: { driver: { include: { user: { select: publicUserSelect } } } }
+    include: { driver: { include: { user: { select: publicUserSelect }, taxiLicense: { include: { vehicles: true } } } } }
   });
 
   await prisma.tripEvent.create({
@@ -300,7 +300,7 @@ router.get("/history", isPassenger, async (req: any, res) => {
   const trips = await prisma.trip.findMany({
     where: { passengerId: user?.passenger?.id },
     orderBy: { requestedAt: 'desc' },
-    include: { driver: { include: { user: { select: publicUserSelect } } } }
+    include: { driver: { include: { user: { select: publicUserSelect }, taxiLicense: { include: { vehicles: true } } } } }
   });
   res.json(trips);
 });

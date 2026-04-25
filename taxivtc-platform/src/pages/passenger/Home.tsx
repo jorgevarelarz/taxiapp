@@ -476,7 +476,7 @@ export default function PassengerHome() {
             <motion.div key="on-trip" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
               <Card className="p-6 space-y-5">
                 {/* Driver info */}
-                <Card variant="nested" className="p-4">
+                <Card variant="nested" className="p-4 space-y-3">
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <div style={{ width: 48, height: 48, background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r-md)' }}
@@ -492,13 +492,30 @@ export default function PassengerHome() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <span style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', color: 'var(--ink-2)' }}
-                        className="text-xs font-mono px-2.5 py-1 inline-block">
-                        {activeTrip.driver?.licenseNumber || 'LIC-1234'}
-                      </span>
-                    </div>
+                    <span style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', color: 'var(--ink-2)' }}
+                      className="text-xs font-mono px-2.5 py-1 inline-block">
+                      {activeTrip.driver?.licenseNumber || 'LIC-1234'}
+                    </span>
                   </div>
+
+                  {/* Vehículo */}
+                  {activeTrip.driver?.taxiLicense?.vehicles?.[0] && (() => {
+                    const v = activeTrip.driver.taxiLicense.vehicles[0];
+                    return (
+                      <div style={{ borderTop: '1px solid var(--line)' }} className="pt-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Car className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--ink-3)' }} />
+                          <span className="text-sm font-medium" style={{ color: 'var(--ink)' }}>
+                            {v.model} · {v.color}
+                          </span>
+                        </div>
+                        <span style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r-sm)', color: 'var(--accent)' }}
+                          className="text-xs font-mono font-bold px-2.5 py-1">
+                          {v.plate}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </Card>
 
                 {/* Route */}
@@ -585,7 +602,7 @@ export default function PassengerHome() {
           <History className="w-5 h-5" style={{ color: 'var(--ink-4)' }} />
           <span className="text-eyebrow" style={{ color: 'var(--ink-4)' }}>Historial</span>
         </button>
-        <button className="flex flex-col items-center gap-1">
+        <button onClick={() => navigate('/passenger/profile')} className="flex flex-col items-center gap-1">
           <User className="w-5 h-5" style={{ color: 'var(--ink-4)' }} />
           <span className="text-eyebrow" style={{ color: 'var(--ink-4)' }}>Perfil</span>
         </button>
