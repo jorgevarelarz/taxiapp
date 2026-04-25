@@ -1,14 +1,18 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { MapPin, Navigation, LogOut, Car, User, Star, AlertCircle, TrendingUp, Wallet, Bell } from 'lucide-react';
+import { Navigation, LogOut, Car, User, Star, AlertCircle, TrendingUp, Wallet, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { fetchJson } from '../../lib/api';
 import { Logo, Card, Button, StatusDot, Spinner, MapContainer } from '../../components/ui';
 
 const DriverMap = lazy(() => import('./DriverMap'));
 
 export default function DriverHome() {
-  const { user, token, logout } = useAuthStore();
+  const { token, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [status, setStatus] = useState<'online' | 'offline' | 'busy'>('offline');
+  const [todayEarnings, setTodayEarnings] = useState<{ total: number; trips: number; pctVsYesterday: number | null } | null>(null);
   const [requests, setRequests] = useState<any[]>([]);
   const [activeTrip, setActiveTrip] = useState<any>(null);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -55,6 +59,13 @@ export default function DriverHome() {
   }, [token]);
 
   useEffect(() => { fetchRequests(); }, [status, token]);
+
+  useEffect(() => {
+    fetchJson<{ today: { total: number; trips: number }; pctVsYesterday: number | null }>(
+      '/api/driver/earnings', { headers: { Authorization: `Bearer ${token}` } }
+    ).then((d) => setTodayEarnings({ total: d.today.total, trips: d.today.trips, pctVsYesterday: d.pctVsYesterday }))
+     .catch(() => null);
+  }, [token]);
 
   const handleAccept = async (tripId: string, offerId: string) => {
     const res = await fetch(`/api/driver/trips/${tripId}/accept`, {
@@ -231,18 +242,31 @@ export default function DriverHome() {
         )}
 
         {/* Earnings */}
-        <Card className="p-6 flex justify-between items-center overflow-hidden relative">
-          <div>
-            <p className="text-eyebrow">Ganancias hoy</p>
-            <h2 className="text-3xl font-bold mt-2" style={{ color: 'var(--ink)' }}>124.50€</h2>
-            <div className="flex items-center gap-1.5 mt-2" style={{ color: 'var(--ok)' }}>
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span className="text-xs font-semibold">+15% vs ayer</span>
+        <button onClick={() => navigate('/driver/earnings')} className="w-full text-left">
+          <Card className="p-6 flex justify-between items-center overflow-hidden relative">
+            <div>
+              <p className="text-eyebrow">Ganancias hoy</p>
+              <h2 className="text-3xl font-bold mt-2" style={{ color: 'var(--ink)' }}>
+                {todayEarnings ? `${todayEarnings.total.toFixed(2)}€` : '—'}
+              </h2>
+              {todayEarnings?.pctVsYesterday != null && (
+                <div className="flex items-center gap-1.5 mt-2"
+                  style={{ color: todayEarnings.pctVsYesterday >= 0 ? 'var(--ok)' : 'var(--danger)' }}>
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  <span className="text-xs font-semibold">
+                    {todayEarnings.pctVsYesterday > 0 ? '+' : ''}{todayEarnings.pctVsYesterday}% vs ayer
+                  </span>
+                </div>
+              )}
+              {todayEarnings?.pctVsYesterday == null && todayEarnings && (
+                <p className="text-xs mt-2" style={{ color: 'var(--ink-3)' }}>
+                  {todayEarnings.trips} {todayEarnings.trips === 1 ? 'viaje' : 'viajes'}
+                </p>
+              )}
             </div>
-          </div>
-          <Wallet className="w-20 h-20 absolute -right-3 -bottom-3 rotate-12 opacity-5" style={{ color: 'var(--ink)' }} />
-          <Button variant="ghost" size="sm">Retirar</Button>
-        </Card>
+            <Wallet className="w-20 h-20 absolute -right-3 -bottom-3 rotate-12 opacity-5" style={{ color: 'var(--ink)' }} />
+          </Card>
+        </button>
 
         {/* Status Toggle */}
         <Card className="p-5 flex items-center justify-between">
@@ -520,7 +544,7 @@ export default function DriverHome() {
           <Navigation className="w-5 h-5" style={{ color: 'var(--accent)' }} />
           <span className="text-eyebrow" style={{ color: 'var(--accent)' }}>Mapa</span>
         </button>
-        <button className="flex flex-col items-center gap-1">
+        <button onClick={() => navigate('/driver/earnings')} className="flex flex-col items-center gap-1">
           <TrendingUp className="w-5 h-5" style={{ color: 'var(--ink-4)' }} />
           <span className="text-eyebrow" style={{ color: 'var(--ink-4)' }}>Ingresos</span>
         </button>

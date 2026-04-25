@@ -4,7 +4,7 @@ import { dispatchTrip } from "../services/dispatch";
 import { tripEventEmitter } from "../sse";
 import { customAlphabet, nanoid } from "nanoid";
 import { publicUserSelect } from "../lib/publicUser";
-import { createTripSchema, formatValidationError, quoteSchema } from "../lib/validation";
+import { createTripSchema, formatValidationError, quoteSchema, ratingSchema } from "../lib/validation";
 import { ZodError } from "zod";
 
 const router = express.Router();
@@ -303,6 +303,51 @@ router.get("/history", isPassenger, async (req: any, res) => {
     include: { driver: { include: { user: { select: publicUserSelect } } } }
   });
   res.json(trips);
+});
+
+router.post("/trips/:id/rate", isPassenger, async (req: any, res) => {
+  let ratingInput;
+  try {
+    ratingInput = ratingSchema.parse(req.body);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({ error: formatValidationError(error) });
+    }
+    return res.status(400).json({ error: "Invalid rating payload" });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { passenger: true },
+  });
+  if (!user?.passenger) return res.status(400).json({ error: "Passenger profile missing" });
+
+  const trip = await prisma.trip.findFirst({
+    where: { id: req.params.id, passengerId: user.passenger.id },
+  });
+  if (!trip) return res.status(404).json({ error: "Trip not found" });
+  if (!["completed", "no_show", "cancelled"].includes(trip.status)) {
+    return res.status(400).json({ error: "Trip must be completed to rate" });
+  }
+  if (!trip.driverId) return res.status(400).json({ error: "No driver to rate" });
+
+  // Idempotency: one rating per trip per passenger
+  const existing = await prisma.rating.findFirst({
+    where: { tripId: trip.id, passengerId: user.passenger.id },
+  });
+  if (existing) return res.json(existing);
+
+  const rating = await prisma.rating.create({
+    data: {
+      tripId: trip.id,
+      passengerId: user.passenger.id,
+      driverId: trip.driverId,
+      score: ratingInput.score,
+      comment: ratingInput.comment,
+    },
+  });
+
+  res.json(rating);
 });
 
 export default router;

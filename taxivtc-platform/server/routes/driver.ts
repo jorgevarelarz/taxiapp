@@ -534,4 +534,60 @@ router.post("/trips/:id/cancel", isDriver, async (req: any, res) => {
   res.json(updatedTrip);
 });
 
+router.get("/earnings", isDriver, async (req: any, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { driver: true },
+  });
+  if (!user?.driver) return res.status(400).json({ error: "Driver profile missing" });
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const [todayTrips, weekTrips, monthTrips, allTimeTrips] = await Promise.all([
+    prisma.trip.findMany({
+      where: { driverId: user.driver.id, status: "completed", completedAt: { gte: todayStart } },
+      select: { finalPrice: true, completedAt: true },
+    }),
+    prisma.trip.findMany({
+      where: { driverId: user.driver.id, status: "completed", completedAt: { gte: weekStart } },
+      select: { finalPrice: true },
+    }),
+    prisma.trip.findMany({
+      where: { driverId: user.driver.id, status: "completed", completedAt: { gte: monthStart } },
+      select: { finalPrice: true },
+    }),
+    prisma.trip.findMany({
+      where: { driverId: user.driver.id, status: "completed" },
+      select: { finalPrice: true, completedAt: true },
+      orderBy: { completedAt: "desc" },
+      take: 30,
+    }),
+  ]);
+
+  const sum = (trips: { finalPrice: number | null }[]) =>
+    trips.reduce((acc, t) => acc + (t.finalPrice ?? 0), 0);
+
+  // Yesterday for comparison
+  const yesterdayStart = new Date(todayStart);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+  const yesterdayTrips = allTimeTrips.filter(
+    (t) => t.completedAt && t.completedAt >= yesterdayStart && t.completedAt < todayStart
+  );
+  const todayTotal = sum(todayTrips);
+  const yesterdayTotal = sum(yesterdayTrips);
+  const pctVsYesterday =
+    yesterdayTotal > 0 ? Math.round(((todayTotal - yesterdayTotal) / yesterdayTotal) * 100) : null;
+
+  res.json({
+    today: { total: todayTotal, trips: todayTrips.length },
+    week: { total: sum(weekTrips), trips: weekTrips.length },
+    month: { total: sum(monthTrips), trips: monthTrips.length },
+    pctVsYesterday,
+  });
+});
+
 export default router;

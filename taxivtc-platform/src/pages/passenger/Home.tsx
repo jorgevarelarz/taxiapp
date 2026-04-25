@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { MapPin, Search, Clock, CreditCard, Star, LogOut, Car, ChevronRight, History, User, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -24,7 +25,8 @@ const DARK_MAP_STYLES: google.maps.MapTypeStyle[] = [
 ];
 
 export default function PassengerHome() {
-  const { user, token, logout } = useAuthStore();
+  const { token, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [step, setStep] = useState<'idle' | 'quoting' | 'searching' | 'on-trip' | 'payment'>('idle');
   const [origin, setOrigin] = useState({ text: 'Calle Real, 12, A Coruña', coords: { lat: 43.369, lng: -8.406 } });
   const [destination, setDestination] = useState<{ text: string; coords: { lat: number; lng: number } | null }>({ text: '', coords: null });
@@ -35,6 +37,9 @@ export default function PassengerHome() {
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number; heading: number } | null>(null);
   const [uiError, setUiError] = useState<string | null>(null);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [ratingTripId, setRatingTripId] = useState<string | null>(null);
+  const [ratingScore, setRatingScore] = useState(0);
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
   const [isRequestingTrip, setIsRequestingTrip] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
@@ -100,6 +105,15 @@ export default function PassengerHome() {
     }
   };
 
+  const resetTrip = (tripId: string) => {
+    setRatingTripId(tripId);
+    setRatingScore(0);
+    setStep('idle');
+    setDestination({ text: '', coords: null });
+    setQuote(null);
+    setActiveTrip(null);
+  };
+
   const handlePaymentConfirm = async () => {
     setUiError(null);
     setIsPaying(true);
@@ -110,15 +124,29 @@ export default function PassengerHome() {
       });
       setActiveTrip(data);
       if (data.paymentStatus === 'paid') {
-        setStep('idle');
-        setDestination({ text: '', coords: null });
-        setQuote(null);
-        setActiveTrip(null);
+        resetTrip(data.id);
       }
     } catch (error) {
       setUiError(error instanceof Error ? error.message : 'No se pudo completar el pago');
     } finally {
       setIsPaying(false);
+    }
+  };
+
+  const handleSubmitRating = async () => {
+    if (!ratingTripId || ratingScore === 0) return;
+    setIsSubmittingRating(true);
+    try {
+      await fetchJson(`/api/passenger/trips/${ratingTripId}/rate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ score: ratingScore }),
+      });
+    } catch {
+      // rating failure is non-blocking
+    } finally {
+      setIsSubmittingRating(false);
+      setRatingTripId(null);
     }
   };
 
@@ -158,10 +186,10 @@ export default function PassengerHome() {
         });
         setActiveTrip(data);
         if (data.status === 'completed') {
-          if (data.paymentStatus === 'paid') { setStep('idle'); setDestination({ text: '', coords: null }); setQuote(null); setActiveTrip(null); }
+          if (data.paymentStatus === 'paid') { resetTrip(data.id); }
           else setStep('payment');
         } else if (data.status === 'cancelled' || data.status === 'no_show') {
-          if (data.paymentStatus === 'paid') { setStep('idle'); setDestination({ text: '', coords: null }); setQuote(null); setActiveTrip(null); }
+          if (data.paymentStatus === 'paid') { resetTrip(data.id); }
           else setStep('payment');
         } else if (['driver_en_route', 'arrived_at_pickup', 'passenger_on_board', 'in_progress'].includes(data.status)) {
           setStep('on-trip');
@@ -553,7 +581,7 @@ export default function PassengerHome() {
           <Car className="w-5 h-5" style={{ color: 'var(--accent)' }} />
           <span className="text-eyebrow" style={{ color: 'var(--accent)' }}>Viaje</span>
         </button>
-        <button className="flex flex-col items-center gap-1">
+        <button onClick={() => navigate('/passenger/history')} className="flex flex-col items-center gap-1">
           <History className="w-5 h-5" style={{ color: 'var(--ink-4)' }} />
           <span className="text-eyebrow" style={{ color: 'var(--ink-4)' }}>Historial</span>
         </button>
@@ -562,6 +590,55 @@ export default function PassengerHome() {
           <span className="text-eyebrow" style={{ color: 'var(--ink-4)' }}>Perfil</span>
         </button>
       </nav>
+
+      {/* Rating modal */}
+      {ratingTripId && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}>
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="w-full max-w-sm"
+          >
+            <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 'var(--r-xl)' }}
+              className="p-8 space-y-6">
+              <div className="text-center">
+                <p className="text-eyebrow mb-2">Viaje completado</p>
+                <h3 className="text-xl font-semibold" style={{ fontFamily: 'var(--font-serif)', color: 'var(--ink)' }}>
+                  ¿Cómo fue el servicio?
+                </h3>
+              </div>
+
+              {/* Stars */}
+              <div className="flex justify-center gap-3">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setRatingScore(n)}
+                    className="text-3xl transition-transform hover:scale-110 active:scale-95"
+                    style={{ filter: n <= ratingScore ? 'none' : 'grayscale(1) opacity(0.3)' }}
+                  >
+                    ⭐
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-3">
+                <Button variant="ghost" size="lg" className="flex-1"
+                  onClick={() => setRatingTripId(null)}>
+                  Omitir
+                </Button>
+                <Button variant="primary" size="lg" className="flex-[2]"
+                  disabled={ratingScore === 0 || isSubmittingRating}
+                  loading={isSubmittingRating}
+                  onClick={handleSubmitRating}>
+                  Enviar valoración
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

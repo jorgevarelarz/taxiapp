@@ -101,6 +101,11 @@ export const adminNotesSchema = z.object({
   notes: z.string().trim().max(2000),
 });
 
+export const ratingSchema = z.object({
+  score: z.number().int().min(1).max(5),
+  comment: z.string().trim().max(500).optional(),
+});
+
 export function formatValidationError(error: ZodError) {
   const issue = error.issues[0];
   return issue ? `${issue.path.join(".") || "body"}: ${issue.message}` : "Invalid request body";

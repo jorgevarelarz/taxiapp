@@ -8,7 +8,9 @@ const queryClient = new QueryClient();
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const PassengerHome = lazy(() => import('./pages/passenger/Home'));
+const PassengerHistory = lazy(() => import('./pages/passenger/History'));
 const DriverHome = lazy(() => import('./pages/driver/Home'));
+const DriverEarnings = lazy(() => import('./pages/driver/Earnings'));
 const AdminHome = lazy(() => import('./pages/admin/Home'));
 
 const ProtectedRoute = ({ children, role }: { children: React.ReactNode; role?: string }) => {
@@ -40,15 +42,25 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             
-            <Route path="/passenger/*" element={
+            <Route path="/passenger" element={
               <ProtectedRoute role="passenger">
                 <PassengerHome />
               </ProtectedRoute>
             } />
+            <Route path="/passenger/history" element={
+              <ProtectedRoute role="passenger">
+                <PassengerHistory />
+              </ProtectedRoute>
+            } />
             
-            <Route path="/driver/*" element={
+            <Route path="/driver" element={
               <ProtectedRoute role="driver">
                 <DriverHome />
+              </ProtectedRoute>
+            } />
+            <Route path="/driver/earnings" element={
+              <ProtectedRoute role="driver">
+                <DriverEarnings />
               </ProtectedRoute>
             } />
             

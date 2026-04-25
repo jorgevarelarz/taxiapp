@@ -1,9 +1,9 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { Car, LogOut, Users, ShieldCheck, DollarSign, List, Map } from 'lucide-react';
+import { Car, LogOut, Users, ShieldCheck, DollarSign, List, Map, Plus, X } from 'lucide-react';
 import { fetchJson } from '../../lib/api';
 import type { Trip, Driver, License, PricingRule } from '../../types/api';
-import { Logo, Card, TripStatusChip, Chip, Spinner } from '../../components/ui';
+import { Logo, Card, TripStatusChip, Chip, Spinner, Button, Input } from '../../components/ui';
 const LiveMap = lazy(() => import('./LiveMap'));
 
 interface DriverLocation { driverId: string; lat: number; lng: number; heading: number; }
@@ -32,8 +32,54 @@ export default function AdminHome() {
   const [rules, setRules] = useState<PricingRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [showRuleForm, setShowRuleForm] = useState(false);
+  const [ruleForm, setRuleForm] = useState({ city: '', baseFare: '', minimumFare: '', perKmDay: '', perKmNight: '', waitingPerHour: '' });
+  const [isSavingRule, setIsSavingRule] = useState(false);
 
   const counts: Record<string, number> = { trips: trips.length, drivers: drivers.length, licenses: licenses.length, rules: rules.length };
+
+  const verifyDriver = async (driverId: string, status: 'verified' | 'rejected') => {
+    setVerifyingId(driverId);
+    try {
+      const updated = await fetchJson<Driver>(`/api/admin/drivers/${driverId}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status }),
+      });
+      setDrivers((prev) => prev.map((d) => (d.id === driverId ? { ...d, verificationStatus: updated.verificationStatus } : d)));
+    } catch {
+      setError('No se pudo actualizar la verificación');
+    } finally {
+      setVerifyingId(null);
+    }
+  };
+
+  const saveRule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingRule(true);
+    try {
+      const newRule = await fetchJson<PricingRule>('/api/admin/pricing-rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          city: ruleForm.city,
+          baseFare: parseFloat(ruleForm.baseFare),
+          minimumFare: parseFloat(ruleForm.minimumFare),
+          perKmDay: parseFloat(ruleForm.perKmDay),
+          perKmNight: parseFloat(ruleForm.perKmNight),
+          waitingPerHour: parseFloat(ruleForm.waitingPerHour),
+        }),
+      });
+      setRules((prev) => [...prev, newRule]);
+      setShowRuleForm(false);
+      setRuleForm({ city: '', baseFare: '', minimumFare: '', perKmDay: '', perKmNight: '', waitingPerHour: '' });
+    } catch {
+      setError('No se pudo crear la regla de precio');
+    } finally {
+      setIsSavingRule(false);
+    }
+  };
 
   useEffect(() => {
     const eventSource = new EventSource('/api/events/drivers');
@@ -98,18 +144,38 @@ export default function AdminHome() {
   const renderDrivers = () => (
     <div className="space-y-2">
       {drivers.map((driver) => (
-        <Card key={driver.id} variant="nested" className="p-4 flex justify-between gap-4">
-          <div>
-            <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{driver.user?.name || 'Conductor'}</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>{driver.user?.email}</p>
-            <p className="text-eyebrow mt-1">{driver.licenseNumber}</p>
+        <Card key={driver.id} variant="nested" className="p-4 space-y-3">
+          <div className="flex justify-between gap-4">
+            <div>
+              <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{driver.user?.name || 'Conductor'}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>{driver.user?.email}</p>
+              <p className="text-eyebrow mt-1">{driver.licenseNumber}</p>
+            </div>
+            <div className="text-right flex-shrink-0 space-y-1">
+              <Chip variant={driver.status === 'online' ? 'ok' : driver.status === 'busy' ? 'warn' : 'default'}>
+                {driver.status}
+              </Chip>
+              <Chip variant={driver.verificationStatus === 'verified' ? 'ok' : driver.verificationStatus === 'rejected' ? 'danger' : 'default'}>
+                {driver.verificationStatus}
+              </Chip>
+            </div>
           </div>
-          <div className="text-right flex-shrink-0 space-y-1">
-            <Chip variant={driver.status === 'online' ? 'ok' : driver.status === 'busy' ? 'warn' : 'default'}>
-              {driver.status}
-            </Chip>
-            <p className="text-eyebrow block">{driver.verificationStatus}</p>
-          </div>
+          {driver.verificationStatus === 'pending' && (
+            <div className="flex gap-2 pt-1" style={{ borderTop: '1px solid var(--line)' }}>
+              <Button variant="danger" size="sm" className="flex-1"
+                disabled={verifyingId === driver.id}
+                loading={verifyingId === driver.id}
+                onClick={() => verifyDriver(driver.id, 'rejected')}>
+                Rechazar
+              </Button>
+              <Button variant="primary" size="sm" className="flex-[2]"
+                disabled={verifyingId === driver.id}
+                loading={verifyingId === driver.id}
+                onClick={() => verifyDriver(driver.id, 'verified')}>
+                <ShieldCheck className="w-3.5 h-3.5" /> Verificar
+              </Button>
+            </div>
+          )}
         </Card>
       ))}
       {drivers.length === 0 && <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Sin conductores registrados.</p>}
@@ -136,22 +202,50 @@ export default function AdminHome() {
   );
 
   const renderRules = () => (
-    <div className="space-y-2">
-      {rules.map((rule) => (
-        <Card key={rule.id} variant="nested" className="p-4 flex justify-between gap-4">
-          <div>
-            <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{rule.city}</p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
-              Base {formatCurrency(rule.baseFare)} · Mínimo {formatCurrency(rule.minimumFare)}
-            </p>
-          </div>
-          <div className="text-right flex-shrink-0">
-            <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Día {formatCurrency(rule.perKmDay)}/km</p>
-            <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Noche {formatCurrency(rule.perKmNight)}/km</p>
-          </div>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-eyebrow">Tarifas configuradas</p>
+        <Button variant="secondary" size="sm" onClick={() => setShowRuleForm((v) => !v)}>
+          {showRuleForm ? <><X className="w-3.5 h-3.5" /> Cancelar</> : <><Plus className="w-3.5 h-3.5" /> Nueva tarifa</>}
+        </Button>
+      </div>
+
+      {showRuleForm && (
+        <Card variant="nested" className="p-5">
+          <form onSubmit={saveRule} className="space-y-4">
+            <p className="text-eyebrow mb-3">Nueva regla de precio</p>
+            <Input label="Ciudad" value={ruleForm.city} onChange={(e) => setRuleForm({ ...ruleForm, city: e.target.value })} placeholder="A Coruña" required />
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Tarifa base (€)" type="number" step="0.01" value={ruleForm.baseFare} onChange={(e) => setRuleForm({ ...ruleForm, baseFare: e.target.value })} placeholder="2.40" required />
+              <Input label="Tarifa mínima (€)" type="number" step="0.01" value={ruleForm.minimumFare} onChange={(e) => setRuleForm({ ...ruleForm, minimumFare: e.target.value })} placeholder="6.00" required />
+              <Input label="€/km día" type="number" step="0.01" value={ruleForm.perKmDay} onChange={(e) => setRuleForm({ ...ruleForm, perKmDay: e.target.value })} placeholder="1.10" required />
+              <Input label="€/km noche" type="number" step="0.01" value={ruleForm.perKmNight} onChange={(e) => setRuleForm({ ...ruleForm, perKmNight: e.target.value })} placeholder="1.30" required />
+              <Input label="€/hora espera" type="number" step="0.01" value={ruleForm.waitingPerHour} onChange={(e) => setRuleForm({ ...ruleForm, waitingPerHour: e.target.value })} placeholder="18.00" required />
+            </div>
+            <Button variant="primary" size="md" fullWidth loading={isSavingRule} disabled={isSavingRule}>
+              Guardar tarifa
+            </Button>
+          </form>
         </Card>
-      ))}
-      {rules.length === 0 && <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Sin reglas de precio definidas.</p>}
+      )}
+
+      <div className="space-y-2">
+        {rules.map((rule) => (
+          <Card key={rule.id} variant="nested" className="p-4 flex justify-between gap-4">
+            <div>
+              <p className="font-semibold text-sm" style={{ color: 'var(--ink)' }}>{rule.city}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--ink-3)' }}>
+                Base {formatCurrency(rule.baseFare)} · Mínimo {formatCurrency(rule.minimumFare)}
+              </p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Día {formatCurrency(rule.perKmDay)}/km</p>
+              <p className="text-xs" style={{ color: 'var(--ink-3)' }}>Noche {formatCurrency(rule.perKmNight)}/km</p>
+            </div>
+          </Card>
+        ))}
+        {rules.length === 0 && !showRuleForm && <p className="text-sm" style={{ color: 'var(--ink-3)' }}>Sin reglas de precio definidas.</p>}
+      </div>
     </div>
   );
 
