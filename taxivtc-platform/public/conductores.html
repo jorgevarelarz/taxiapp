@@ -290,6 +290,41 @@
     footer a { color: var(--ink-3); transition: color 0.2s; }
     footer a:hover { color: var(--ink); }
 
+    /* Phone mockups */
+    .phones-scroll {
+      display: flex; gap: 24px;
+      padding: 8px 48px 32px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .phones-scroll::-webkit-scrollbar { display: none; }
+    .phone-wrap { flex-shrink: 0; text-align: center; }
+    .phone-frame {
+      width: 258px; height: 560px;
+      background: #101013; border-radius: 44px;
+      border: 2px solid #2E2E38; position: relative; overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 24px 56px rgba(0,0,0,0.7);
+      display: inline-block;
+    }
+    .ph-island {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      width: 70px; height: 22px; background: #000; border-radius: 11px; z-index: 20;
+    }
+    .ph-indicator {
+      position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+      width: 88px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; z-index: 20;
+    }
+    .ph-screen {
+      position: absolute; inset: 0; background: #09090B;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .ph-status {
+      height: 48px; flex-shrink: 0;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: 0 22px 8px; font-size: 11px; font-weight: 600; color: var(--ink);
+    }
+    .ph-map { position: relative; overflow: hidden; background-color: #0D0D11; }
+    @media (min-width: 1200px) { .phones-scroll { justify-content: center; } }
+
     @media (max-width: 640px) {
       nav { padding: 0 16px; }
       .step:not(:last-child)::after { display: none; }
@@ -410,6 +445,272 @@
           <p>Enciende la app, espera el primer viaje y empieza a ganar. El cobro es automático al finalizar cada carrera.</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- App preview — conductor -->
+  <section style="padding: 96px 0; background: var(--bg); overflow: hidden;">
+    <div class="container" style="text-align: center; padding-left: 24px; padding-right: 24px; margin-bottom: 64px;">
+      <p class="section-eyebrow">La app en acción</p>
+      <h2 class="section-title" style="margin: 0 auto 16px;">Tu panel<br /><em>de conductor</em></h2>
+      <p style="font-size: 18px; color: var(--ink-3); max-width: 480px; margin: 0 auto; line-height: 1.6;">Actívate, acepta viajes y controla tus ingresos desde una sola app.</p>
+    </div>
+    <div class="phones-scroll">
+
+      <!-- Phone 1 — Activarse -->
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="ph-island"></div>
+          <div class="ph-indicator"></div>
+          <div class="ph-screen">
+            <div class="ph-status"><span>8:05</span><div style="display:flex;gap:4px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="4" width="3" height="7" rx="0.5" opacity="0.35"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="0.5" opacity="0.6"/><rect x="9" y="1" width="3" height="10" rx="0.5" opacity="0.85"/><rect x="13.5" y="0" width="2.5" height="11" rx="0.5"/></svg><svg width="25" height="11" viewBox="0 0 25 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/><path d="M22 3.5v4a1.5 1.5 0 0 0 0-4z" fill="currentColor" fill-opacity="0.4"/></svg></div></div>
+            <div class="ph-map" style="flex:1;position:relative;">
+              <svg style="position:absolute;inset:0;width:100%;height:100%;" preserveAspectRatio="xMidYMid slice" viewBox="0 0 258 320" xmlns="http://www.w3.org/2000/svg">
+                <rect width="258" height="320" fill="#0D0D11"/>
+                <rect x="0" y="60" width="258" height="11" fill="#181820"/><rect x="0" y="130" width="258" height="8" fill="#151518"/>
+                <rect x="0" y="200" width="258" height="11" fill="#181820"/><rect x="0" y="265" width="258" height="8" fill="#151518"/>
+                <rect x="42" y="0" width="11" height="320" fill="#181820"/><rect x="115" y="0" width="8" height="320" fill="#151518"/><rect x="185" y="0" width="11" height="320" fill="#181820"/>
+                <line x1="0" y1="280" x2="115" y2="130" stroke="#1B1B24" stroke-width="7"/><line x1="115" y1="130" x2="258" y2="60" stroke="#191924" stroke-width="5"/>
+              </svg>
+              <!-- Central toggle area -->
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+                <div style="background:rgba(9,9,11,0.82);backdrop-filter:blur(12px);border:1px solid #24242A;border-radius:20px;padding:24px 28px;text-align:center;">
+                  <div style="width:64px;height:64px;background:#1E1E26;border:2px solid #2E2E38;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+                    <div style="width:28px;height:28px;background:#2E2E38;border-radius:50%;"></div>
+                  </div>
+                  <p style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;">Estás offline</p>
+                  <p style="font-size:11px;color:var(--ink-3);margin-bottom:16px;">Toca para activarte</p>
+                  <div style="background:var(--accent);border-radius:var(--r-full);padding:10px 24px;display:inline-block;">
+                    <span style="font-size:12px;font-weight:700;color:var(--accent-ink);">Activarme</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Bottom stats bar -->
+            <div style="background:var(--panel);border-top:1px solid var(--line);padding:12px 16px;display:flex;justify-content:space-around;">
+              <div style="text-align:center;">
+                <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-4);margin-bottom:3px;">Hoy</p>
+                <p style="font-family:var(--serif);font-size:20px;color:var(--ink-3);">0.00€</p>
+              </div>
+              <div style="width:1px;background:var(--line);"></div>
+              <div style="text-align:center;">
+                <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-4);margin-bottom:3px;">Viajes</p>
+                <p style="font-size:20px;font-weight:700;color:var(--ink-3);">0</p>
+              </div>
+              <div style="width:1px;background:var(--line);"></div>
+              <div style="text-align:center;">
+                <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-4);margin-bottom:3px;">Tiempo</p>
+                <p style="font-size:20px;font-weight:700;color:var(--ink-3);">0h</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:18px;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.12em;">01 — Actívate</p>
+      </div>
+
+      <!-- Phone 2 — Nuevo viaje -->
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="ph-island"></div>
+          <div class="ph-indicator"></div>
+          <div class="ph-screen">
+            <div class="ph-status" style="background:#09090B;"><span>8:22</span><div style="display:flex;gap:4px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="4" width="3" height="7" rx="0.5" opacity="0.35"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="0.5" opacity="0.6"/><rect x="9" y="1" width="3" height="10" rx="0.5" opacity="0.85"/><rect x="13.5" y="0" width="2.5" height="11" rx="0.5"/></svg><svg width="25" height="11" viewBox="0 0 25 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/><path d="M22 3.5v4a1.5 1.5 0 0 0 0-4z" fill="currentColor" fill-opacity="0.4"/></svg></div></div>
+            <!-- Header alert -->
+            <div style="background:rgba(212,255,58,0.06);border-bottom:1px solid rgba(212,255,58,0.12);padding:10px 16px;display:flex;align-items:center;gap:8px;">
+              <div style="width:6px;height:6px;background:var(--accent);border-radius:50%;flex-shrink:0;"></div>
+              <span style="font-size:12px;font-weight:700;color:var(--accent);">¡Nuevo viaje disponible!</span>
+            </div>
+            <!-- Passenger -->
+            <div style="padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;">
+              <div style="width:44px;height:44px;background:#1E1E26;border:2px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>
+              <div>
+                <p style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px;">María G.</p>
+                <div style="display:flex;align-items:center;gap:3px;">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="#D4FF3A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <span style="font-size:10px;color:var(--ink-2);">4.8 · Pasajera habitual</span>
+                </div>
+              </div>
+              <div style="margin-left:auto;text-align:right;">
+                <p style="font-family:var(--serif);font-size:28px;color:var(--accent);line-height:1;">14.80€</p>
+                <p style="font-size:10px;color:var(--ink-3);">Precio cerrado</p>
+              </div>
+            </div>
+            <!-- Route -->
+            <div style="padding:12px 16px;border-bottom:1px solid var(--line);">
+              <div style="display:flex;gap:10px;margin-bottom:4px;">
+                <div style="display:flex;flex-direction:column;align-items:center;padding-top:2px;flex-shrink:0;">
+                  <div style="width:8px;height:8px;border:2px solid var(--ok);border-radius:50%;"></div>
+                  <div style="width:1px;height:20px;background:var(--line);margin:3px 0;"></div>
+                  <div style="width:8px;height:8px;background:var(--accent);border-radius:2px;"></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:16px;">
+                  <p style="font-size:11px;font-weight:600;color:var(--ink);">Plaza de Pontevedra</p>
+                  <p style="font-size:11px;font-weight:600;color:var(--ink);">Hotel Finisterre</p>
+                </div>
+              </div>
+              <p style="font-size:10px;color:var(--ink-3);margin-top:8px;">800m hasta recogida · 2 min</p>
+            </div>
+            <!-- Timer bar -->
+            <div style="padding:10px 16px;border-bottom:1px solid var(--line);">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:10px;color:var(--ink-3);">Tiempo para aceptar</span>
+                <span style="font-size:10px;font-weight:700;color:var(--accent);">12s</span>
+              </div>
+              <div style="height:4px;background:#1E1E26;border-radius:2px;overflow:hidden;">
+                <div style="height:100%;width:75%;background:var(--accent);border-radius:2px;"></div>
+              </div>
+            </div>
+            <!-- Buttons -->
+            <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 2fr;gap:8px;">
+              <div style="border:1.5px solid var(--line);border-radius:12px;padding:14px;text-align:center;">
+                <span style="font-size:12px;font-weight:600;color:var(--ink-3);">Rechazar</span>
+              </div>
+              <div style="background:var(--accent);border-radius:12px;padding:14px;text-align:center;">
+                <span style="font-size:13px;font-weight:700;color:var(--accent-ink);">Aceptar viaje</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:18px;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.12em;">02 — Acepta el viaje</p>
+      </div>
+
+      <!-- Phone 3 — En curso -->
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="ph-island"></div>
+          <div class="ph-indicator"></div>
+          <div class="ph-screen">
+            <div class="ph-status"><span>8:35</span><div style="display:flex;gap:4px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="4" width="3" height="7" rx="0.5" opacity="0.35"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="0.5" opacity="0.6"/><rect x="9" y="1" width="3" height="10" rx="0.5" opacity="0.85"/><rect x="13.5" y="0" width="2.5" height="11" rx="0.5"/></svg><svg width="25" height="11" viewBox="0 0 25 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/><path d="M22 3.5v4a1.5 1.5 0 0 0 0-4z" fill="currentColor" fill-opacity="0.4"/></svg></div></div>
+            <div class="ph-map" style="height:210px;flex-shrink:0;">
+              <svg style="position:absolute;inset:0;width:100%;height:100%;" preserveAspectRatio="xMidYMid slice" viewBox="0 0 258 210" xmlns="http://www.w3.org/2000/svg">
+                <rect width="258" height="210" fill="#0D0D11"/>
+                <rect x="0" y="45" width="258" height="10" fill="#181820"/><rect x="0" y="100" width="258" height="7" fill="#151518"/>
+                <rect x="0" y="155" width="258" height="10" fill="#181820"/>
+                <rect x="45" y="0" width="10" height="210" fill="#181820"/><rect x="115" y="0" width="7" height="210" fill="#151518"/><rect x="185" y="0" width="10" height="210" fill="#181820"/>
+                <polyline points="75,185 95,155 115,100 150,45 215,22" stroke="#D4FF3A" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+                <!-- Car (mid-route) -->
+                <circle cx="115" cy="100" r="8" fill="#D4FF3A"/><circle cx="115" cy="100" r="14" fill="#D4FF3A" opacity="0.15"/>
+                <!-- Origin (checked) -->
+                <circle cx="75" cy="185" r="5" fill="#7AE582"/>
+                <!-- Destination -->
+                <circle cx="215" cy="22" r="5" fill="#F5F5F7" opacity="0.6"/>
+              </svg>
+            </div>
+            <!-- Status -->
+            <div style="padding:9px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(212,255,58,0.07);border:1px solid rgba(212,255,58,0.15);border-radius:20px;padding:4px 10px;">
+                <div style="width:5px;height:5px;background:var(--accent);border-radius:50%;"></div>
+                <span style="font-size:10px;font-weight:700;color:var(--accent);">En curso</span>
+              </div>
+              <span style="font-size:10px;color:var(--ink-3);">8 min restantes</span>
+            </div>
+            <!-- Passenger -->
+            <div style="padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;">
+              <div style="width:38px;height:38px;background:#1E1E26;border:2px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">👤</div>
+              <div>
+                <p style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:1px;">María G. a bordo</p>
+                <p style="font-size:10px;color:var(--ink-3);">Hotel Finisterre · 14.80€</p>
+              </div>
+            </div>
+            <!-- Route progress -->
+            <div style="padding:12px 14px;flex:1;">
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
+                <div style="width:16px;height:16px;background:rgba(122,229,130,0.15);border:1.5px solid #7AE582;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#7AE582" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <p style="font-size:11px;color:var(--ink-3);text-decoration:line-through;">Plaza de Pontevedra</p>
+              </div>
+              <div style="width:1px;height:12px;background:var(--line);margin:0 0 6px 7px;"></div>
+              <div style="display:flex;align-items:center;gap:9px;">
+                <div style="width:7px;height:7px;background:var(--accent);border-radius:1px;flex-shrink:0;margin-left:4px;"></div>
+                <p style="font-size:11px;font-weight:600;color:var(--ink);">Hotel Finisterre</p>
+              </div>
+            </div>
+            <!-- End trip button -->
+            <div style="padding:12px 14px 24px;border-top:1px solid var(--line);">
+              <div style="background:var(--accent);border-radius:12px;padding:14px;text-align:center;">
+                <span style="font-size:13px;font-weight:700;color:var(--accent-ink);">Finalizar viaje</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:18px;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.12em;">03 — Viaje en curso</p>
+      </div>
+
+      <!-- Phone 4 — Panel de ingresos -->
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="ph-island"></div>
+          <div class="ph-indicator"></div>
+          <div class="ph-screen">
+            <div class="ph-status"><span>17:48</span><div style="display:flex;gap:4px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="4" width="3" height="7" rx="0.5" opacity="0.35"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="0.5" opacity="0.6"/><rect x="9" y="1" width="3" height="10" rx="0.5" opacity="0.85"/><rect x="13.5" y="0" width="2.5" height="11" rx="0.5"/></svg><svg width="25" height="11" viewBox="0 0 25 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/><path d="M22 3.5v4a1.5 1.5 0 0 0 0-4z" fill="currentColor" fill-opacity="0.4"/></svg></div></div>
+            <!-- Header -->
+            <div style="padding:8px 16px 12px;border-bottom:1px solid var(--line);">
+              <p style="font-size:13px;font-weight:600;color:var(--ink);">Panel de ingresos</p>
+            </div>
+            <!-- Today earnings -->
+            <div style="padding:16px;text-align:center;border-bottom:1px solid var(--line);">
+              <p style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px;">Hoy</p>
+              <p style="font-family:var(--serif);font-size:52px;color:var(--accent);line-height:1;margin-bottom:2px;">96.40€</p>
+              <p style="font-size:10px;color:var(--ink-3);">↑ +8.2€ vs. ayer</p>
+            </div>
+            <!-- Stats grid -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line);">
+              <div style="background:var(--panel);padding:12px 8px;text-align:center;">
+                <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-4);margin-bottom:4px;">Viajes</p>
+                <p style="font-size:18px;font-weight:700;color:var(--ink);">8</p>
+              </div>
+              <div style="background:var(--panel);padding:12px 8px;text-align:center;">
+                <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-4);margin-bottom:4px;">Horas</p>
+                <p style="font-size:18px;font-weight:700;color:var(--ink);">7.2</p>
+              </div>
+              <div style="background:var(--panel);padding:12px 8px;text-align:center;">
+                <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-4);margin-bottom:4px;">Media</p>
+                <p style="font-size:18px;font-weight:700;color:var(--ink);">12€</p>
+              </div>
+            </div>
+            <!-- Mini bar chart -->
+            <div style="padding:12px 14px;border-bottom:1px solid var(--line);">
+              <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-4);margin-bottom:10px;">Últimos 5 días</p>
+              <div style="display:flex;align-items:flex-end;gap:6px;height:44px;">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+                  <div style="width:100%;background:#24242A;border-radius:3px;height:28px;"></div>
+                  <p style="font-size:8px;color:var(--ink-4);">L</p>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+                  <div style="width:100%;background:#24242A;border-radius:3px;height:36px;"></div>
+                  <p style="font-size:8px;color:var(--ink-4);">M</p>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+                  <div style="width:100%;background:#24242A;border-radius:3px;height:22px;"></div>
+                  <p style="font-size:8px;color:var(--ink-4);">X</p>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+                  <div style="width:100%;background:#24242A;border-radius:3px;height:30px;"></div>
+                  <p style="font-size:8px;color:var(--ink-4);">J</p>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+                  <div style="width:100%;background:var(--accent);border-radius:3px;height:38px;opacity:0.9;"></div>
+                  <p style="font-size:8px;color:var(--accent);">V</p>
+                </div>
+              </div>
+            </div>
+            <!-- Last trips -->
+            <div style="padding:10px 14px;flex:1;">
+              <p style="font-size:9px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-4);margin-bottom:8px;">Último viaje</p>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                  <p style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:1px;">Hotel Finisterre</p>
+                  <p style="font-size:10px;color:var(--ink-3);">hace 12 min · 8 min</p>
+                </div>
+                <p style="font-size:13px;font-weight:700;color:var(--ink);">14.80€</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:18px;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.12em;">04 — Controla tus ingresos</p>
+      </div>
+
     </div>
   </section>
 

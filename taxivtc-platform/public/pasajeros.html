@@ -247,6 +247,41 @@
     footer a { color: var(--ink-3); transition: color 0.2s; }
     footer a:hover { color: var(--ink); }
 
+    /* Phone mockups */
+    .phones-scroll {
+      display: flex; gap: 24px;
+      padding: 8px 48px 32px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .phones-scroll::-webkit-scrollbar { display: none; }
+    .phone-wrap { flex-shrink: 0; text-align: center; }
+    .phone-frame {
+      width: 258px; height: 560px;
+      background: #101013; border-radius: 44px;
+      border: 2px solid #2E2E38; position: relative; overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 24px 56px rgba(0,0,0,0.7);
+      display: inline-block;
+    }
+    .ph-island {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      width: 70px; height: 22px; background: #000; border-radius: 11px; z-index: 20;
+    }
+    .ph-indicator {
+      position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+      width: 88px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; z-index: 20;
+    }
+    .ph-screen {
+      position: absolute; inset: 0; background: #09090B;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .ph-status {
+      height: 48px; flex-shrink: 0;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: 0 22px 8px; font-size: 11px; font-weight: 600; color: var(--ink);
+    }
+    .ph-map { position: relative; overflow: hidden; background-color: #0D0D11; }
+    @media (min-width: 1200px) { .phones-scroll { justify-content: center; } }
+
     @media (max-width: 640px) {
       nav { padding: 0 16px; }
       .step:not(:last-child)::after { display: none; }
@@ -361,6 +396,220 @@
           <p>El conductor más cercano lo acepta en segundos. Sigue su posición en el mapa en tiempo real.</p>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- App preview — pasajero -->
+  <section style="padding: 96px 0; background: var(--bg); overflow: hidden;">
+    <div class="container" style="text-align: center; padding-left: 24px; padding-right: 24px; margin-bottom: 64px;">
+      <p class="section-eyebrow">La app en acción</p>
+      <h2 class="section-title" style="margin: 0 auto 16px;">Ve cómo funciona<br /><em>en tu teléfono</em></h2>
+      <p style="font-size: 18px; color: var(--ink-3); max-width: 480px; margin: 0 auto; line-height: 1.6;">Cuatro pasos. Cuatro pantallas. De cero a taxi en menos de un minuto.</p>
+    </div>
+    <div class="phones-scroll">
+
+      <!-- Phone 1 — Elige destino -->
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="ph-island"></div>
+          <div class="ph-indicator"></div>
+          <div class="ph-screen">
+            <div class="ph-status"><span>9:41</span><div style="display:flex;gap:4px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="4" width="3" height="7" rx="0.5" opacity="0.35"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="0.5" opacity="0.6"/><rect x="9" y="1" width="3" height="10" rx="0.5" opacity="0.85"/><rect x="13.5" y="0" width="2.5" height="11" rx="0.5"/></svg><svg width="25" height="11" viewBox="0 0 25 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/><path d="M22 3.5v4a1.5 1.5 0 0 0 0-4z" fill="currentColor" fill-opacity="0.4"/></svg></div></div>
+            <div class="ph-map" style="flex:1;">
+              <svg style="position:absolute;inset:0;width:100%;height:100%;" preserveAspectRatio="xMidYMid slice" viewBox="0 0 258 280" xmlns="http://www.w3.org/2000/svg">
+                <rect width="258" height="280" fill="#0D0D11"/>
+                <rect x="0" y="60" width="258" height="11" fill="#181820"/><rect x="0" y="120" width="258" height="8" fill="#151518"/>
+                <rect x="0" y="170" width="258" height="11" fill="#181820"/><rect x="0" y="220" width="258" height="8" fill="#151518"/>
+                <rect x="42" y="0" width="11" height="280" fill="#181820"/><rect x="110" y="0" width="8" height="280" fill="#151518"/>
+                <rect x="178" y="0" width="11" height="280" fill="#181820"/>
+                <line x1="0" y1="240" x2="110" y2="120" stroke="#1B1B24" stroke-width="7"/><line x1="110" y1="120" x2="258" y2="60" stroke="#191924" stroke-width="5"/>
+              </svg>
+              <div style="position:absolute;bottom:35%;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;">
+                <div style="width:34px;height:34px;background:var(--accent);border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 0 20px rgba(212,255,58,0.5);display:flex;align-items:center;justify-content:center;">
+                  <div style="transform:rotate(45deg);width:11px;height:11px;background:#09090B;border-radius:50%;"></div>
+                </div>
+              </div>
+              <div style="position:absolute;top:10px;left:12px;background:rgba(9,9,11,0.88);backdrop-filter:blur(8px);padding:5px 9px;border-radius:8px;border:1px solid #24242A;font-size:12px;font-weight:700;font-family:var(--serif);color:var(--ink);">NORA</div>
+              <div style="position:absolute;top:10px;right:12px;background:rgba(9,9,11,0.88);backdrop-filter:blur(8px);border:1px solid #24242A;border-radius:8px;overflow:hidden;">
+                <div style="padding:5px 9px;font-size:14px;color:var(--ink-2);border-bottom:1px solid #24242A;">+</div>
+                <div style="padding:5px 9px;font-size:14px;color:var(--ink-2);">−</div>
+              </div>
+            </div>
+            <div style="background:var(--panel);border-top:1px solid var(--line);padding:14px;">
+              <div style="background:#17171B;border:1px solid #2E2E38;border-radius:12px;padding:10px 13px;display:flex;align-items:center;gap:9px;margin-bottom:11px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6E6E78" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <span style="font-size:12px;color:#3F3F48;">¿A dónde vamos?</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px;padding:7px 2px;">
+                <div style="width:28px;height:28px;background:rgba(212,255,58,0.08);border:1px solid rgba(212,255,58,0.15);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D4FF3A" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+                </div>
+                <div><p style="font-size:11px;font-weight:600;color:var(--ink);margin-bottom:1px;">Mi ubicación</p><p style="font-size:10px;color:#6E6E78;">Calle Real, 14 · A Coruña</p></div>
+              </div>
+              <p style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-4);margin:10px 0 7px;padding-left:2px;">Recientes</p>
+              <div style="display:flex;align-items:center;gap:9px;padding:7px 2px;border-top:1px solid #1C1C22;">
+                <div style="width:28px;height:28px;background:#17171B;border:1px solid #24242A;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6E6E78" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5 8 13 8 13s8-8 8-13a8 8 0 0 0-8-8z"/></svg>
+                </div>
+                <div><p style="font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:1px;">Aeropuerto A Coruña</p><p style="font-size:10px;color:#6E6E78;">Culleredo · hace 2 días</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:18px;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.12em;">01 — Elige destino</p>
+      </div>
+
+      <!-- Phone 2 — Precio cerrado -->
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="ph-island"></div>
+          <div class="ph-indicator"></div>
+          <div class="ph-screen">
+            <div class="ph-status"><span>9:42</span><div style="display:flex;gap:4px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="4" width="3" height="7" rx="0.5" opacity="0.35"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="0.5" opacity="0.6"/><rect x="9" y="1" width="3" height="10" rx="0.5" opacity="0.85"/><rect x="13.5" y="0" width="2.5" height="11" rx="0.5"/></svg><svg width="25" height="11" viewBox="0 0 25 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/><path d="M22 3.5v4a1.5 1.5 0 0 0 0-4z" fill="currentColor" fill-opacity="0.4"/></svg></div></div>
+            <div style="padding:6px 14px 11px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+              <span style="font-size:13px;font-weight:600;color:var(--ink);">Tu viaje</span>
+            </div>
+            <div style="padding:14px 16px 10px;">
+              <div style="display:flex;gap:10px;align-items:stretch;">
+                <div style="display:flex;flex-direction:column;align-items:center;padding-top:2px;">
+                  <div style="width:9px;height:9px;border:2px solid var(--accent);border-radius:50%;"></div>
+                  <div style="width:1px;flex:1;background:var(--line);margin:4px 0;"></div>
+                  <div style="width:9px;height:9px;background:var(--accent);border-radius:2px;"></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:18px;">
+                  <div><p style="font-size:10px;color:var(--ink-3);margin-bottom:2px;">Origen</p><p style="font-size:12px;font-weight:600;color:var(--ink);">Calle Real, 14</p></div>
+                  <div><p style="font-size:10px;color:var(--ink-3);margin-bottom:2px;">Destino</p><p style="font-size:12px;font-weight:600;color:var(--ink);">Aeropuerto A Coruña</p></div>
+                </div>
+              </div>
+            </div>
+            <div style="padding:4px 16px 12px;text-align:center;border-bottom:1px solid var(--line);">
+              <p style="font-family:var(--serif);font-size:52px;line-height:1;color:var(--accent);margin-bottom:3px;">18.40€</p>
+              <p style="font-size:10px;color:var(--ink-3);">Precio cerrado · 22 min · 14.2 km</p>
+            </div>
+            <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;border-bottom:1px solid var(--line);">
+              <div style="background:rgba(212,255,58,0.07);border:1.5px solid rgba(212,255,58,0.3);border-radius:10px;padding:9px;text-align:center;">
+                <div style="font-size:16px;margin-bottom:3px;">🚖</div>
+                <p style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:1px;">Estándar</p>
+                <p style="font-size:10px;color:var(--ink-3);">18.40€</p>
+              </div>
+              <div style="background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:9px;text-align:center;">
+                <div style="font-size:16px;margin-bottom:3px;">🚙</div>
+                <p style="font-size:10px;font-weight:600;color:var(--ink-2);margin-bottom:1px;">Confort</p>
+                <p style="font-size:10px;color:var(--ink-3);">22.80€</p>
+              </div>
+            </div>
+            <div style="flex:1;"></div>
+            <div style="padding:12px 14px 24px;">
+              <div style="background:var(--accent);border-radius:12px;padding:13px;display:flex;align-items:center;justify-content:center;gap:7px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span style="font-size:13px;font-weight:700;color:var(--accent-ink);">Confirmar viaje</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:18px;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.12em;">02 — Precio cerrado</p>
+      </div>
+
+      <!-- Phone 3 — Conductor en camino -->
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="ph-island"></div>
+          <div class="ph-indicator"></div>
+          <div class="ph-screen">
+            <div class="ph-status"><span>9:43</span><div style="display:flex;gap:4px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="4" width="3" height="7" rx="0.5" opacity="0.35"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="0.5" opacity="0.6"/><rect x="9" y="1" width="3" height="10" rx="0.5" opacity="0.85"/><rect x="13.5" y="0" width="2.5" height="11" rx="0.5"/></svg><svg width="25" height="11" viewBox="0 0 25 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/><path d="M22 3.5v4a1.5 1.5 0 0 0 0-4z" fill="currentColor" fill-opacity="0.4"/></svg></div></div>
+            <div class="ph-map" style="height:200px;flex-shrink:0;">
+              <svg style="position:absolute;inset:0;width:100%;height:100%;" preserveAspectRatio="xMidYMid slice" viewBox="0 0 258 200" xmlns="http://www.w3.org/2000/svg">
+                <rect width="258" height="200" fill="#0D0D11"/>
+                <rect x="0" y="40" width="258" height="10" fill="#181820"/><rect x="0" y="90" width="258" height="7" fill="#151518"/>
+                <rect x="0" y="140" width="258" height="10" fill="#181820"/>
+                <rect x="40" y="0" width="10" height="200" fill="#181820"/><rect x="110" y="0" width="7" height="200" fill="#151518"/><rect x="180" y="0" width="10" height="200" fill="#181820"/>
+                <polyline points="70,175 90,140 105,90 140,40 210,18" stroke="#D4FF3A" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+                <circle cx="90" cy="140" r="7" fill="#D4FF3A"/><circle cx="90" cy="140" r="13" fill="#D4FF3A" opacity="0.15"/>
+                <circle cx="70" cy="175" r="5" fill="#7AE582" opacity="0.8"/>
+                <circle cx="210" cy="18" r="5" fill="#F5F5F7" opacity="0.5"/>
+              </svg>
+            </div>
+            <div style="padding:9px 12px;border-bottom:1px solid var(--line);">
+              <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(212,255,58,0.07);border:1px solid rgba(212,255,58,0.15);border-radius:20px;padding:4px 10px;">
+                <div style="width:5px;height:5px;background:var(--accent);border-radius:50%;"></div>
+                <span style="font-size:10px;font-weight:700;color:var(--accent);">Conductor en camino · 3 min</span>
+              </div>
+            </div>
+            <div style="padding:12px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:11px;">
+              <div style="width:42px;height:42px;background:#1E1E26;border:2px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👤</div>
+              <div style="flex:1;">
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px;">
+                  <p style="font-size:12px;font-weight:700;color:var(--ink);">Carlos M.</p>
+                  <div style="display:flex;align-items:center;gap:2px;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="#D4FF3A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    <span style="font-size:10px;color:var(--ink-2);font-weight:600;">4.9</span>
+                  </div>
+                </div>
+                <p style="font-size:10px;color:var(--ink-3);">Skoda Octavia · Blanca · 7842 HJK</p>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <div style="width:32px;height:32px;background:#17171B;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.47 2 2 0 0 1 3.6 1.28h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <div style="width:32px;height:32px;background:#17171B;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+              </div>
+            </div>
+            <div style="padding:12px 14px;flex:1;">
+              <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
+                <div style="width:7px;height:7px;border:1.5px solid var(--accent);border-radius:50%;flex-shrink:0;margin-left:1px;"></div>
+                <p style="font-size:11px;color:var(--ink-2);">Calle Real, 14</p>
+              </div>
+              <div style="width:1px;height:12px;background:var(--line);margin:0 0 6px 4px;"></div>
+              <div style="display:flex;align-items:center;gap:9px;">
+                <div style="width:7px;height:7px;background:var(--accent);border-radius:1px;flex-shrink:0;margin-left:1px;"></div>
+                <p style="font-size:11px;color:var(--ink-2);">Aeropuerto A Coruña</p>
+              </div>
+            </div>
+            <div style="padding:8px 14px 20px;text-align:center;border-top:1px solid var(--line);">
+              <span style="font-size:10px;color:var(--ink-4);">Cancelar viaje</span>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top:18px;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.12em;">03 — Sigue tu taxi</p>
+      </div>
+
+      <!-- Phone 4 — Valorar -->
+      <div class="phone-wrap">
+        <div class="phone-frame">
+          <div class="ph-island"></div>
+          <div class="ph-indicator"></div>
+          <div class="ph-screen">
+            <div class="ph-status"><span>10:05</span><div style="display:flex;gap:4px;align-items:center;"><svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><rect x="0" y="4" width="3" height="7" rx="0.5" opacity="0.35"/><rect x="4.5" y="2.5" width="3" height="8.5" rx="0.5" opacity="0.6"/><rect x="9" y="1" width="3" height="10" rx="0.5" opacity="0.85"/><rect x="13.5" y="0" width="2.5" height="11" rx="0.5"/></svg><svg width="25" height="11" viewBox="0 0 25 11" fill="none"><rect x="0.5" y="0.5" width="20" height="10" rx="2" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="16" height="7" rx="1" fill="currentColor"/><path d="M22 3.5v4a1.5 1.5 0 0 0 0-4z" fill="currentColor" fill-opacity="0.4"/></svg></div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:22px 18px 0;text-align:center;overflow:hidden;">
+              <div style="width:68px;height:68px;background:rgba(122,229,130,0.08);border:2px solid rgba(122,229,130,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#7AE582" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <p style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:4px;">¡Viaje completado!</p>
+              <p style="font-family:var(--serif);font-size:38px;color:var(--accent);line-height:1;margin-bottom:3px;">18.40€</p>
+              <p style="font-size:10px;color:var(--ink-3);margin-bottom:20px;">Pagado · 22 min · Centro → Aeropuerto</p>
+              <div style="width:100%;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;">
+                <p style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:13px;">¿Cómo fue el viaje con Carlos?</p>
+                <div style="display:flex;gap:6px;justify-content:center;margin-bottom:14px;">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#D4FF3A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#D4FF3A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#D4FF3A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#D4FF3A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#D4FF3A"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                </div>
+                <div style="background:var(--accent);border-radius:10px;padding:11px;text-align:center;">
+                  <span style="font-size:12px;font-weight:700;color:var(--accent-ink);">Enviar valoración</span>
+                </div>
+              </div>
+            </div>
+            <div style="height:20px;"></div>
+          </div>
+        </div>
+        <p style="margin-top:18px;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.12em;">04 — Valora el viaje</p>
+      </div>
+
     </div>
   </section>
 
