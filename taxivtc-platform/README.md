@@ -28,7 +28,8 @@ Variables mínimas:
    `npm install`
 2. Genera cliente Prisma:
    `npx prisma generate`
-3. Ejecuta migraciones o sincroniza esquema según tu entorno
+3. Inicializa la base según tu entorno:
+   `npm run db:setup`
 4. Arranca la app:
    `npm run dev`
 
@@ -38,6 +39,8 @@ Variables mínimas:
   `npm run lint`
 - Build frontend:
   `npm run build`
+- Bootstrap base de datos:
+  `npm run db:setup`
 - Healthcheck:
   `GET /api/health`
 

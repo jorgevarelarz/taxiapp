@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="NORA — Tu taxi en A Coruña. Precio cerrado antes de salir. Sin sorpresas, sin esperas, sin comisiones." />
+  <meta property="og:title" content="NORA · Tu taxi en A Coruña" />
+  <meta property="og:description" content="Precio cerrado antes de salir. Pide tu taxi en segundos." />
+  <meta property="og:type" content="website" />
+  <title>NORA · Tu taxi en A Coruña</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #09090B;
+      --panel: #111114;
+      --panel-2: #17171B;
+      --line: #24242A;
+      --ink: #F5F5F7;
+      --ink-2: #B5B5BD;
+      --ink-3: #6E6E78;
+      --ink-4: #3F3F48;
+      --accent: #D4FF3A;
+      --accent-ink: #0A0A0B;
+      --ok: #7AE582;
+      --sans: 'Geist', system-ui, sans-serif;
+      --serif: 'Instrument Serif', Georgia, serif;
+      --r-sm: 10px;
+      --r-md: 16px;
+      --r-lg: 24px;
+      --r-full: 999px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* Nav */
+    nav {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(9,9,11,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+      padding: 0 24px;
+      height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-box {
+      width: 36px; height: 36px; background: var(--accent); color: var(--accent-ink);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 18px;
+      box-shadow: 0 0 20px rgba(212,255,58,0.3);
+    }
+    .logo-name { font-family: var(--serif); font-size: 22px; color: var(--ink); }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .btn-ghost {
+      padding: 8px 16px; border-radius: var(--r-full);
+      border: 1px solid var(--line); background: transparent;
+      color: var(--ink-2); font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-ghost:hover { border-color: var(--ink-3); color: var(--ink); }
+    .btn-primary {
+      padding: 10px 20px; border-radius: var(--r-full);
+      background: var(--accent); color: var(--accent-ink);
+      font-size: 14px; font-weight: 600; border: none;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 0 20px rgba(212,255,58,0.25);
+    }
+    .btn-primary:hover { filter: brightness(1.08); }
+    .btn-primary-lg {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 16px 32px; border-radius: var(--r-full);
+      background: var(--accent); color: var(--accent-ink);
+      font-size: 16px; font-weight: 700; border: none;
+      cursor: pointer; transition: all 0.2s;
+      box-shadow: 0 0 32px rgba(212,255,58,0.3);
+    }
+    .btn-primary-lg:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn-outline-lg {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 16px 32px; border-radius: var(--r-full);
+      background: transparent; color: var(--ink);
+      font-size: 16px; font-weight: 600;
+      border: 1px solid var(--line-2, #2E2E35);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-outline-lg:hover { border-color: var(--ink-3); }
+
+    /* Hero */
+    .hero {
+      min-height: 92vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 80px 24px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212,255,58,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px; border-radius: var(--r-full);
+      background: rgba(212,255,58,0.08); border: 1px solid rgba(212,255,58,0.15);
+      font-size: 12px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 32px;
+    }
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(44px, 8vw, 80px);
+      line-height: 1.05;
+      color: var(--ink);
+      max-width: 900px;
+      margin-bottom: 24px;
+    }
+    .hero h1 em { font-style: italic; color: var(--accent); }
+    .hero-sub {
+      font-size: clamp(16px, 2vw, 20px);
+      color: var(--ink-3);
+      max-width: 540px;
+      line-height: 1.6;
+      margin-bottom: 48px;
+    }
+    .hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+    /* Trust bar */
+    .trust-bar {
+      display: flex; justify-content: center; align-items: center; gap: 32px;
+      flex-wrap: wrap;
+      padding: 24px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .trust-item {
+      display: flex; align-items: center; gap-8px;
+      font-size: 13px; color: var(--ink-3);
+    }
+    .trust-item span.dot { color: var(--ok); margin-right: 8px; font-size: 16px; }
+
+    /* Sections */
+    section { padding: 96px 24px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.1; color: var(--ink); margin-bottom: 16px;
+    }
+    .section-title em { font-style: italic; color: var(--accent); }
+    .section-sub { font-size: 18px; color: var(--ink-3); max-width: 560px; line-height: 1.6; margin-bottom: 64px; }
+
+    /* Cards grid */
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      padding: 32px;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--ink-4); }
+    .card-icon {
+      width: 48px; height: 48px;
+      background: rgba(212,255,58,0.08);
+      border: 1px solid rgba(212,255,58,0.15);
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; margin-bottom: 20px;
+    }
+    .card h3 { font-size: 18px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+    .card p { font-size: 14px; color: var(--ink-3); line-height: 1.6; }
+
+    /* Steps */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0; }
+    .step { padding: 40px 32px; position: relative; }
+    .step:not(:last-child)::after {
+      content: '→';
+      position: absolute; right: -8px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--ink-4); font-size: 20px;
+    }
+    .step-num {
+      font-family: var(--serif);
+      font-size: 48px; line-height: 1;
+      color: rgba(212,255,58,0.15);
+      margin-bottom: 16px;
+    }
+    .step h3 { font-size: 20px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+    .step p { font-size: 14px; color: var(--ink-3); line-height: 1.6; }
+
+    /* Price section */
+    .price-section {
+      background: var(--panel);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .price-card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      padding: 40px;
+      max-width: 600px;
+    }
+    .price-tag {
+      font-family: var(--serif);
+      font-size: 56px;
+      color: var(--accent);
+      line-height: 1;
+      margin: 16px 0;
+    }
+    .feature-list { list-style: none; space-y: 8px; }
+    .feature-list li {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0;
+      font-size: 15px; color: var(--ink-2);
+      border-bottom: 1px solid var(--line);
+    }
+    .feature-list li:last-child { border-bottom: none; }
+    .feature-list li::before { content: '✓'; color: var(--ok); font-weight: 700; flex-shrink: 0; }
+
+    /* CTA final */
+    .cta-final {
+      text-align: center;
+      background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(212,255,58,0.06) 0%, transparent 70%);
+    }
+
+    /* Footer */
+    footer {
+      padding: 32px 24px;
+      border-top: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+      font-size: 13px; color: var(--ink-4);
+    }
+    footer a { color: var(--ink-3); transition: color 0.2s; }
+    footer a:hover { color: var(--ink); }
+
+    @media (max-width: 640px) {
+      nav { padding: 0 16px; }
+      .step:not(:last-child)::after { display: none; }
+      .steps { gap: 0; }
+      .step { padding: 32px 0; border-bottom: 1px solid var(--line); }
+      section { padding: 72px 16px; }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a href="/" class="logo">
+      <div class="logo-box">N</div>
+      <span class="logo-name">NORA</span>
+    </a>
+    <div class="nav-links">
+      <a href="/conductores" class="btn-ghost">Soy conductor</a>
+      <a href="/login" class="btn-primary">Acceder</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-eyebrow">
+      <span>●</span> A Coruña · Disponible ahora
+    </div>
+    <h1>Tu taxi.<br /><em>Precio cerrado</em><br />antes de salir.</h1>
+    <p class="hero-sub">
+      Pon tu destino, ve cuánto cuesta exactamente y confirma tu viaje en segundos. Sin sorpresas al bajarte.
+    </p>
+    <div class="hero-ctas">
+      <a href="/register" class="btn-primary-lg">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Pedir mi taxi ahora
+      </a>
+      <a href="#como-funciona" class="btn-outline-lg">Cómo funciona</a>
+    </div>
+  </section>
+
+  <!-- Trust bar -->
+  <div class="trust-bar">
+    <div class="trust-item"><span class="dot">✓</span> Precio garantizado</div>
+    <div class="trust-item"><span class="dot">✓</span> Conductores verificados</div>
+    <div class="trust-item"><span class="dot">✓</span> Sin comisión extra</div>
+    <div class="trust-item"><span class="dot">✓</span> Pago en app o efectivo</div>
+    <div class="trust-item"><span class="dot">✓</span> Seguimiento en tiempo real</div>
+  </div>
+
+  <!-- Beneficios -->
+  <section>
+    <div class="container">
+      <p class="section-eyebrow">Por qué NORA</p>
+      <h2 class="section-title">Moverse por A Coruña<br /><em>no debería ser complicado</em></h2>
+      <p class="section-sub">Diseñada para quienes quieren un taxi de confianza sin apps engorrosas ni precios opacos.</p>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-icon">💶</div>
+          <h3>Precio cerrado siempre</h3>
+          <p>El precio que ves al confirmar es el que pagas. Sin subidas por tráfico, sin recargos de última hora.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <h3>Taxi en minutos</h3>
+          <p>El conductor más cercano acepta tu viaje automáticamente. Sin llamadas, sin esperar al teléfono.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🗺️</div>
+          <h3>Sigue tu taxi en vivo</h3>
+          <p>Ve exactamente dónde está el conductor mientras se acerca a recogerte en el mapa.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🛡️</div>
+          <h3>Conductores verificados</h3>
+          <p>Todos los conductores de NORA pasan por un proceso de verificación antes de poder operar.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">💳</div>
+          <h3>Paga como quieras</h3>
+          <p>Pago en la app con un toque o en efectivo al conductor. Tú eliges en cada viaje.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⭐</div>
+          <h3>Valora cada viaje</h3>
+          <p>Tu opinión importa. Los conductores con mejor valoración tienen prioridad en el reparto.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cómo funciona -->
+  <section id="como-funciona" style="background: var(--panel); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);">
+    <div class="container">
+      <p class="section-eyebrow">Tan fácil como</p>
+      <h2 class="section-title">Tres pasos y<br /><em>tu taxi está en camino</em></h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <h3>Escribe tu destino</h3>
+          <p>Introduce la dirección de recogida y el destino. El GPS la detecta automáticamente si quieres.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <h3>Ve el precio exacto</h3>
+          <p>NORA calcula el precio según la tarifa oficial de A Coruña. Lo que ves es lo que pagas.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <h3>Confirma y espera</h3>
+          <p>El conductor más cercano lo acepta en segundos. Sigue su posición en el mapa en tiempo real.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Precio transparente -->
+  <section class="price-section">
+    <div class="container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;">
+      <div>
+        <p class="section-eyebrow">Tarifa oficial A Coruña</p>
+        <h2 class="section-title">Sin letra pequeña.<br /><em>Sin sorpresas.</em></h2>
+        <p style="font-size: 16px; color: var(--ink-3); line-height: 1.7; margin-bottom: 32px;">
+          NORA aplica las tarifas oficiales del taxi de A Coruña. El precio se calcula con la distancia y duración real de tu ruta antes de confirmar.
+        </p>
+        <ul class="feature-list">
+          <li>Tarifa base visible antes de salir</li>
+          <li>Sin recargo por hora punta</li>
+          <li>Suplemento aeropuerto incluido si aplica</li>
+          <li>No se cobra si no apareces (tarifa de espera sí aplica)</li>
+        </ul>
+      </div>
+      <div class="price-card">
+        <p style="font-size: 12px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-3);">Ejemplo de viaje</p>
+        <p style="font-size: 15px; color: var(--ink-2); margin-top: 8px;">Centro → Aeropuerto de A Coruña</p>
+        <div class="price-tag">18.40€</div>
+        <p style="font-size: 13px; color: var(--ink-3);">Precio cerrado · ~22 min · 14.2 km</p>
+        <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; gap: 16px;">
+          <div>
+            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--ink-4);">Tarifa base</p>
+            <p style="font-size: 16px; font-weight: 600; color: var(--ink);">2.40€</p>
+          </div>
+          <div>
+            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--ink-4);">Por km (día)</p>
+            <p style="font-size: 16px; font-weight: 600; color: var(--ink);">1.10€</p>
+          </div>
+          <div>
+            <p style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--ink-4);">Mínimo</p>
+            <p style="font-size: 16px; font-weight: 600; color: var(--ink);">6.00€</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA final -->
+  <section class="cta-final">
+    <div class="container" style="text-align: center;">
+      <p class="section-eyebrow">Empieza ahora</p>
+      <h2 class="section-title" style="margin: 0 auto 16px;">¿Listo para tu<br /><em>primer viaje?</em></h2>
+      <p style="font-size: 18px; color: var(--ink-3); margin-bottom: 48px;">Crea tu cuenta gratis en 30 segundos.</p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="/register" class="btn-primary-lg">Crear cuenta gratuita</a>
+        <a href="/login" class="btn-outline-lg">Ya tengo cuenta</a>
+      </div>
+      <p style="font-size: 13px; color: var(--ink-4); margin-top: 24px;">Sin tarjeta de crédito · Sin suscripciones</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="logo">
+      <div class="logo-box" style="width:28px; height:28px; font-size:14px; border-radius:8px;">N</div>
+      <span style="font-family: var(--serif); font-size: 18px; color: var(--ink-3);">NORA</span>
+    </div>
+    <span>© 2026 NORA · A Coruña</span>
+    <div style="display:flex; gap: 20px;">
+      <a href="/conductores">¿Eres conductor?</a>
+      <a href="/login">Acceder</a>
+    </div>
+  </footer>
+
+</body>
+</html>

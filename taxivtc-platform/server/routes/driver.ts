@@ -264,40 +264,79 @@ router.post("/trips/:id/accept", isDriver, async (req: any, res) => {
   }
 
   const { offerId } = offerInput;
+  const now = new Date();
 
-  // Verify offer is still valid
-  const offer = await prisma.tripOffer.findFirst({
-    where: {
-      id: offerId,
-      tripId: req.params.id,
-      driverId: user.driver.id,
-    },
-  });
-  if (!offer || offer.status !== "pending" || offer.expiresAt < new Date()) {
-    return res.status(400).json({ error: "Offer expired or invalid" });
+  let trip;
+  try {
+    trip = await prisma.$transaction(async (tx) => {
+      const offer = await tx.tripOffer.findFirst({
+        where: {
+          id: offerId,
+          tripId: req.params.id,
+          driverId: user.driver.id,
+        },
+      });
+
+      if (!offer || offer.status !== "pending" || offer.expiresAt < now) {
+        throw new Error("Offer expired or invalid");
+      }
+
+      const tripUpdate = await tx.trip.updateMany({
+        where: {
+          id: req.params.id,
+          driverId: null,
+          status: "requested",
+        },
+        data: {
+          driverId: user.driver.id,
+          status: "driver_en_route",
+          dispatchStatus: "accepted",
+          driverEnRouteAt: now,
+        },
+      });
+
+      if (tripUpdate.count !== 1) {
+        throw new Error("Trip already accepted");
+      }
+
+      await tx.tripOffer.update({
+        where: { id: offerId },
+        data: { status: "accepted", respondedAt: now },
+      });
+
+      await tx.tripOffer.updateMany({
+        where: {
+          tripId: req.params.id,
+          id: { not: offerId },
+          status: "pending",
+        },
+        data: { status: "expired", respondedAt: now },
+      });
+
+      const acceptedTrip = await tx.trip.findUnique({
+        where: { id: req.params.id },
+        include: { passenger: { include: { user: { select: publicUserSelect } } } },
+      });
+
+      if (!acceptedTrip) {
+        throw new Error("Trip not found");
+      }
+
+      await tx.tripEvent.create({
+        data: {
+          tripId: acceptedTrip.id,
+          type: "TRIP_ACCEPTED",
+          payloadJson: JSON.stringify({ driverId: user.driver.id }),
+        },
+      });
+
+      return acceptedTrip;
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Could not accept trip";
+    const status = message === "Offer expired or invalid" || message === "Trip already accepted" ? 409 : 400;
+    return res.status(status).json({ error: message });
   }
-
-  // Update offer
-  await prisma.tripOffer.update({
-    where: { id: offerId },
-    data: { status: "accepted", respondedAt: new Date() }
-  });
-
-  // Update trip
-  const trip = await prisma.trip.update({
-    where: { id: req.params.id },
-    data: {
-      driverId: user.driver.id,
-      status: "driver_en_route",
-      dispatchStatus: "accepted",
-      driverEnRouteAt: new Date(),
-    },
-    include: { passenger: { include: { user: { select: publicUserSelect } } } }
-  });
-
-  await prisma.tripEvent.create({
-    data: { tripId: trip.id, type: "TRIP_ACCEPTED", payloadJson: JSON.stringify({ driverId: user.driver.id }) }
-  });
 
   tripEventEmitter.emit('trip_update', trip);
 

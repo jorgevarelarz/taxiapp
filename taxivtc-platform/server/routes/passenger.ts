@@ -296,9 +296,11 @@ router.get("/history", isPassenger, async (req: any, res) => {
     where: { id: req.user.id },
     include: { passenger: true },
   });
-  
+
+  if (!user?.passenger) return res.status(400).json({ error: "Passenger profile missing" });
+
   const trips = await prisma.trip.findMany({
-    where: { passengerId: user?.passenger?.id },
+    where: { passengerId: user.passenger.id },
     orderBy: { requestedAt: 'desc' },
     include: { driver: { include: { user: { select: publicUserSelect }, taxiLicense: { include: { vehicles: true } } } } }
   });
