@@ -11,7 +11,6 @@ RUN npm ci
 
 COPY . .
 
-ARG BUILD_DATE
 RUN npm run build
 
 EXPOSE 3000
